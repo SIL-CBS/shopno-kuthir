@@ -20,7 +20,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:1100px;margin:0 auto}
 .stage{display:grid;grid-template-columns:1fr;gap:10px;padding:10px 0 0}
 video{width:100%;max-height:34vh;background:#000;border-radius:12px;display:block}
-.no-video video{display:none}
+.no-video video,.audio-only video{display:none}
 .ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 2px}
 #play{width:60px;height:60px;border-radius:50%;border:0;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center}#play svg{width:28px;height:28px}
 #status{font-size:13px;color:#cfdcd6;min-height:20px;text-align:center}
@@ -105,7 +105,7 @@ main{padding:6px 12px 120px}
   </div>
   <div id="fileMsg"></div>
   <section class="file">
-    <p>প্রথমবার জুমাবারের ভিডিও বা অডিও ফাইলটা এই ফোনে রাখুন। একবার রাখলে এরপর ইন্টারনেট ছাড়াই চলবে; ফাইল শুধু এই ডিভাইসেই থাকে।</p>
+    <p>প্রথমবার জুমাবারের অডিও ফাইলটা (Munajat_Friday_audio.m4a; ভিডিওও চলে) এই ফোনে রাখুন। একবার রাখলে এরপর ইন্টারনেট ছাড়াই চলবে; ফাইল শুধু এই ডিভাইসেই থাকে।</p>
     <button class="big" id="addFile">ফাইল বেছে নিন</button>
     <input type="file" id="file" accept="video/*,audio/*" hidden>
   </section>
@@ -130,7 +130,7 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="data.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
