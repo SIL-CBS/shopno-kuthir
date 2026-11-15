@@ -6,11 +6,22 @@
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
   if (!Array.isArray(S.sel)) S.sel = [];
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
-  const day = DATA.days[0], duas = day.duas, DAYKEY = day.id || 'friday';
+  /* ---------- দিন: ৭ দিনের তালিকা; যে দিনের লেখা এখনো নেই, সেটা পুরো ফাইল এক টানা বাজে ---------- */
+  const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল']];
+  let DAYID = 'friday'; try { DAYID = localStorage.getItem('mm_day') || 'friday'; } catch (e) {}
+  if (!DAYS.some((d) => d[0] === DAYID)) DAYID = 'friday';
+  const DMETA = DAYS.find((d) => d[0] === DAYID);
+  const day = DATA.days.find((d) => d.id === DAYID) || {id: DAYID, title: DMETA[1] + ' · ' + DMETA[2], range: 'লেখা এখনো যোগ হয়নি — শুধু অডিও', placeholder: true,
+    duas: [{no: '—', s: 0, e: 1e6, lines: [{ar: '', bn: 'এই দিনের আরবি লেখা, উচ্চারণ আর অর্থ এখনো যোগ হয়নি। অডিও পুরোটা বাজবে।', s: 0, e: 1e6}]}]};
+  const duas = day.duas, DAYKEY = DAYID;
+  // প্রতিটি দিনের বাছাই, কোন দোয়ায় ছিলেন আর সময়-ঠিক আলাদা থাকে
+  S.perDay = S.perDay || {}; if (!S.perDay.friday && !S.dayInit) S.perDay.friday = {dua: S.dua, sel: S.sel, nudge: S.nudge}; S.dayInit = 1;
+  { const pd = S.perDay[DAYID] || {}; S.dua = Math.min(pd.dua || 0, duas.length - 1); S.sel = (pd.sel || []).filter((i) => i < duas.length); S.nudge = pd.nudge || {}; }
+  const save = () => { S.perDay[DAYID] = {dua: S.dua, sel: S.sel, nudge: S.nudge}; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   /* ---------- IndexedDB: মিডিয়া ফাইল ---------- */
   const idb = () => new Promise((ok, bad) => { const r = indexedDB.open('munajat', 1); r.onupgradeneeded = () => r.result.createObjectStore('media'); r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error); });
   const putMedia = async (k, blob) => { const db = await idb(); return new Promise((ok, bad) => { const t = db.transaction('media', 'readwrite'); t.objectStore('media').put(blob, k); t.oncomplete = ok; t.onerror = () => bad(t.error); }); };
+  const mediaKeys = async () => { try { const db = await idb(); return await new Promise((ok) => { const r = db.transaction('media').objectStore('media').getAllKeys(); r.onsuccess = () => ok(r.result || []); r.onerror = () => ok([]); }); } catch (e) { return []; } };
   const getMedia = async (k) => { const db = await idb(); return new Promise((ok) => { const r = db.transaction('media').objectStore('media').get(k); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); };
   /* ---------- সময় ---------- */
   const LEAD = 0.12; // লাইনের শুরু যেন কেটে না যায়
@@ -88,9 +99,17 @@
   $('#sheet').addEventListener('click', (ev) => { if (ev.target.id === 'sheet') $('#sheet').hidden = true; });
   document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode === 'line') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
   $('#file').addEventListener('change', async (ev) => { const f = ev.target.files[0]; if (!f) return; $('#fileMsg').textContent = 'রাখা হচ্ছে…'; try { await putMedia(DAYKEY, f); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); await loadMedia(); } catch (e) { $('#fileMsg').textContent = 'রাখা যায়নি: ' + e.message; } });
-  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = ''; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); $('#fileMsg').textContent = 'ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB'; };
+  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB'; };
   if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', toggle); navigator.mediaSession.setActionHandler('pause', toggle); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
   $('#dayTitle').textContent = day.title; $('#dayRange').textContent = day.range; const src = $('#mnSrc'); if (src && day.mnSrc) src.href = day.mnSrc;
-  render(); loadMedia();
+  /* ---------- দিনের তালিকা ---------- */
+  async function drawDays() { const box = $('#days'); if (!box) return; const keys = await mediaKeys();
+    box.innerHTML = DAYS.map(([id, nm, mz]) => { const has = keys.includes(id), txt = DATA.days.some((d) => d.id === id);
+      return `<button type="button" class="dy${id === DAYID ? ' cur' : ''}" data-day="${id}"><b>${nm}</b><small>${mz}</small><i class="${has ? 'ok' : 'no'}">${has ? '✓ ফাইল আছে' : '+ ফাইল দিন'}</i>${txt ? '' : '<i class="tx">শুধু অডিও</i>'}</button>`; }).join('');
+    box.querySelectorAll('[data-day]').forEach((b) => b.onclick = async () => { const id = b.dataset.day, has = (await mediaKeys()).includes(id);
+      if (id === DAYID) { if (!has) { $('#file').value = ''; $('#file').click(); } return; }
+      save(); try { localStorage.setItem('mm_day', id); } catch (e) {} if (!has) { try { sessionStorage.setItem('mm_pick', '1'); } catch (e) {} } location.reload(); }); }
+  render(); loadMedia(); drawDays();
+  try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}
 })();
