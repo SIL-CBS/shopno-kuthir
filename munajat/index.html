@@ -31,7 +31,18 @@ video{width:100%;max-height:34vh;background:#000;border-radius:12px;display:bloc
 main{padding:6px 12px 120px}
 .dua{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:8px 0;overflow:hidden}
 .dua.open{border-color:var(--gold)}
-.dh{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:transparent;text-align:right;min-height:52px}
+.dhw{display:flex;align-items:stretch}
+.pick{flex:none;width:52px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;padding:0 0 0 6px}
+.box{width:26px;height:26px;border-radius:8px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.sel .box{background:var(--accent);border-color:var(--accent)}
+.dua.sel{box-shadow:inset 4px 0 0 var(--accent)}
+.picker{margin:8px 12px 0;padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.picker b{font-size:15px;color:var(--accent)}#pickInfo{display:block;font-size:13px;color:var(--muted);margin:2px 0 8px}
+.pk{display:flex;gap:8px;flex-wrap:wrap}.pk button{min-height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 14px}
+.pk button[aria-pressed=true]{background:var(--deep);color:#f6f4ee;border-color:var(--deep)}.pk button:disabled{opacity:.45}
+#pickPlay{background:var(--deep);color:#f6f4ee;border-color:var(--deep);margin-left:auto}
+.src{font-size:12px;color:var(--muted);padding:4px 14px}.src a{color:var(--accent)}
+.dh{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:transparent;text-align:right;min-height:52px}
 .no{font-weight:700;color:var(--accent);min-width:58px;text-align:left;font-size:15px}
 .first{flex:1;font-family:Amiri,serif;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dur{font-size:12px;color:var(--muted)}
@@ -98,6 +109,10 @@ main{padding:6px 12px 120px}
     <button class="big" id="addFile">ফাইল বেছে নিন</button>
     <input type="file" id="file" accept="video/*,audio/*" hidden>
   </section>
+  <section class="picker" aria-label="শোনার তালিকা">
+    <b>শোনার তালিকা</b><span id="pickInfo"></span>
+    <div class="pk"><button id="pickAll">সব বাছাই</button><button id="pickNone">বাছাই মুছুন</button><button id="pickPlay">▶ তালিকা চালাও</button></div>
+  </section>
   <main id="list"></main>
 </div>
 <div class="sheet" id="sheet" hidden>
@@ -106,10 +121,12 @@ main{padding:6px 12px 120px}
     <div class="grp st"><div><span>প্রতিটি অংশ কতবার<small>পুরো দোয়া বা প্রতিটি লাইন</small></span></div><div><button data-step="reps:-1" aria-label="কমান">−</button><output id="reps"></output><button data-step="reps:1" aria-label="বাড়ান">+</button></div></div>
     <div class="grp st"><div><span>প্রতিবারের মাঝে বিরতি<small>নিজে মুখে বলার সময়</small></span></div><div><button data-step="gap:-1" aria-label="কমান">−</button><output id="gap"></output><button data-step="gap:1" aria-label="বাড়ান">+</button></div></div>
     <div class="grp st" id="wholeRow"><div><span>শেষে পুরো দোয়া একসাথে<small>লাইনগুলো জোড়া দিতে</small></span></div><div><button data-step="whole:-1" aria-label="কমান">−</button><output id="whole"></output><button data-step="whole:1" aria-label="বাড়ান">+</button></div></div>
-    <div class="grp"><span>দোয়া শেষ হলে</span><div class="seg"><button data-set="after:next">পরের দোয়া</button><button data-set="after:loop">এটাই আবার</button><button data-set="after:stop">থামো</button></div></div>
+    <div class="grp"><span>দোয়া শেষ হলে</span><div class="seg"><button data-set="after:next">তালিকার পরেরটা</button><button data-set="after:loop">এটাই আবার</button><button data-set="after:stop">থামো</button></div></div>
+    <div class="grp"><span>তালিকার শেষ দোয়ার পর</span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-tg="listLoop">আবার প্রথম থেকে</button></div><small style="color:var(--muted);font-size:12px">বন্ধ থাকলে তালিকা একবার শেষ হয়ে থামবে</small></div>
     <div class="grp"><span>গতি</span><div class="seg"><button data-set="speed:0.75">০.৭৫×</button><button data-set="speed:1">১×</button><button data-set="speed:1.25">১.২৫×</button></div></div>
     <div class="grp"><span>আরবির আকার</span><div class="seg"><button data-set="font:24">ছোট</button><button data-set="font:30">মাঝারি</button><button data-set="font:38">বড়</button></div></div>
     <div class="grp"><span>ভিডিও</span><div class="seg"><button data-tg="video">ভিডিও দেখাও</button></div></div>
+    <div class="grp"><span>বাংলা অর্থ</span><p style="margin:0;font-size:13px;line-height:1.6;color:var(--muted)">আরবি থেকে লাইন ধরে করা অনুবাদ, প্রকাশিত অনুবাদের সাথে মিলিয়ে দেখা। প্রকাশিত পূর্ণ অনুবাদ: <a id="mnSrc" target="_blank" rel="noopener" style="color:var(--accent)">মুসলিম বাংলা — মুনাজাতে মাকবুল, শুক্রবার</a></p></div>
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
