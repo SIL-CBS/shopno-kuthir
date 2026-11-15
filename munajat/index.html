@@ -21,6 +21,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .stage{display:grid;grid-template-columns:1fr;gap:10px;padding:10px 0 0}
 video{width:100%;max-height:34vh;background:#000;border-radius:12px;display:block}
 .no-video video,.audio-only video{display:none}
+.no-video .stage,.audio-only .stage{grid-template-columns:1fr!important;max-width:420px;margin:0 auto;padding-top:4px}
 .ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 2px}
 #play{width:60px;height:60px;border-radius:50%;border:0;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center}#play svg{width:28px;height:28px}
 #status{font-size:13px;color:#cfdcd6;min-height:20px;text-align:center}
@@ -132,7 +133,7 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
