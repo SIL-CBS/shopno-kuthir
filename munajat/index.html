@@ -72,6 +72,7 @@ main{padding:6px 12px 120px}
 .st small{display:block;color:var(--muted);font-size:12px}
 .file{margin:12px;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--gold);display:none}
 .nofile .file{display:block}
+.yt{margin:6px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:6px 12px}.yt summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}.ytr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.ytr b{font-size:15px}.ytr small{display:block;color:var(--muted);font-size:12px}.ytr a,.ytr button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;text-decoration:none;white-space:nowrap}.ytn{font-size:12px;color:var(--muted);margin:6px 0}
 .days{display:flex;gap:8px;overflow-x:auto;padding:10px 14px 4px;scrollbar-width:thin}.dy{flex:0 0 auto;display:grid;gap:1px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;min-width:112px}.dy b{font-size:15px}.dy small{font-size:12px;color:var(--muted)}.dy i{font-style:normal;font-size:12px}.dy i.ok{color:#1d6b3a}.dy i.no{color:var(--accent)}.dy i.tx{color:var(--muted)}.dy.cur{border-color:var(--deep);box-shadow:inset 0 0 0 2px var(--deep)}.file p{margin:0 0 10px;font-size:15px;line-height:1.6}
 .big{min-height:48px;border-radius:12px;border:0;background:var(--deep);color:#f6f4ee;padding:0 18px;font-size:16px}
 #fileMsg{font-size:12px;color:var(--muted);padding:2px 14px}
@@ -108,6 +109,7 @@ main{padding:6px 12px 120px}
   </div>
   <button type="button" class="arnote" data-tg="hideAr">আরবি ঢাকা আছে (মুখস্থ যাচাইয়ের জন্য) — দেখাতে এখানে চাপুন</button>
   <section class="days" id="days" aria-label="দিন বাছাই"></section>
+  <details class="yt" id="yt"><summary>YouTube লিংক — সব দিনের ভিডিও</summary><div id="ytList"></div><p class="ytn">ফাইল ফোনে নামাতে YouTube-এর লিংক লাগলে এখান থেকে কপি করুন। দোয়ার নম্বর শুধু যে দিনের লেখা অ্যাপে আছে, সেগুলোর দেখানো হয়েছে।</p></details>
   <div id="fileMsg"></div>
   <section class="file">
     <p>এই দিনের অডিও ফাইলটা (যেমন Munajat_Friday_audio.m4a; ভিডিওও চলে) এই ফোনে রাখুন। একবার রাখলে এরপর ইন্টারনেট ছাড়াই চলবে; ফাইল শুধু এই ডিভাইসেই থাকে।</p>
@@ -136,7 +138,7 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=17"></script>
-<script src="app.js?v=17"></script>
+<script src="data.js?v=18"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
