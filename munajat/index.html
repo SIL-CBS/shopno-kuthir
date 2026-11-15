@@ -77,6 +77,17 @@ main{padding:6px 12px 120px}
 .big{min-height:48px;border-radius:12px;border:0;background:var(--deep);color:#f6f4ee;padding:0 18px;font-size:16px}
 #fileMsg{font-size:12px;color:var(--muted);padding:2px 14px}
 @media (min-width:900px){.stage{grid-template-columns:minmax(0,1fr) 300px;align-items:end}video{max-height:42vh}}
+.srch{margin:8px 12px 0;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.sq{display:flex;gap:8px}.sq input{flex:1;min-width:0;min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:inherit;font:inherit;font-size:15px;padding:0 12px}
+#favBtn{flex:none;min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:#b8860b;padding:0 12px;font-weight:700}#favBtn[aria-pressed=true]{background:var(--deep);color:#ffd54a;border-color:var(--deep)}
+#qres:empty{display:none}#qres{margin-top:8px;max-height:55vh;overflow:auto}
+.qr{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;padding:9px 4px;font:inherit}
+.qr b{color:var(--accent);font-size:14px}.qr small{color:var(--muted);font-size:12px;margin-left:6px}.qr span{display:block;font-size:14px;margin-top:2px;line-height:1.5}.qr mark{background:#ffe08a;color:#000;border-radius:3px}
+.qn{font-size:13px;color:var(--muted);padding:6px 4px}
+.star{flex:none;width:46px;border:0;background:transparent;font-size:22px;color:var(--muted)}.star.on{color:#e0a800}
+#hifz{position:fixed;left:12px;right:12px;bottom:14px;z-index:30;background:var(--deep);color:#f6f4ee;border-radius:18px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+#hifz p{margin:0 0 8px;font-size:15px;font-weight:700}#hifz div{display:flex;gap:10px}#hifz button{flex:1;min-height:48px;border-radius:14px;border:0;font:inherit;font-size:16px;font-weight:700}
+#hifzAgain{background:#f6f4ee;color:var(--deep)}#hifzNext{background:#e0b84c;color:#1b2a22}
 </style>
 </head>
 <body>
@@ -106,6 +117,7 @@ main{padding:6px 12px 120px}
     <button class="chip" data-tg="hideAr">আরবি ঢাকো</button>
     <button class="chip mode" data-set="mode:dua">পুরো দোয়া</button>
     <button class="chip" data-set="mode:line">লাইন ধরে</button>
+    <button class="chip" data-set="mode:hifz">মুখস্থ</button>
   </div>
   <button type="button" class="arnote" data-tg="hideAr">আরবি ঢাকা আছে (মুখস্থ যাচাইয়ের জন্য) — দেখাতে এখানে চাপুন</button>
   <section class="days" id="days" aria-label="দিন বাছাই"></section>
@@ -116,12 +128,17 @@ main{padding:6px 12px 120px}
     <button class="big" id="addFile">ফাইল বেছে নিন</button>
     <input type="file" id="file" accept="audio/*,video/*,.m4a,.mp3,.mp4,.aac,.wav,.ogg,.webm" hidden>
   </section>
+  <section class="srch" aria-label="খোঁজা ও প্রিয়">
+    <div class="sq"><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="খুঁজুন — অর্থ, উচ্চারণ বা দোয়া নং (৭ দিনেই)"><button type="button" id="favBtn" aria-pressed="false">★ প্রিয়</button></div>
+    <div id="qres"></div>
+  </section>
   <section class="picker" aria-label="শোনার তালিকা">
     <b>শোনার তালিকা</b><span id="pickInfo"></span>
-    <div class="pk"><button id="pickAll">সব বাছাই</button><button id="pickNone">বাছাই মুছুন</button><button id="pickPlay">▶ তালিকা চালাও</button></div>
+    <div class="pk"><button id="pickAll">সব বাছাই</button><button id="pickNone">বাছাই মুছুন</button><button id="pickFav">★ প্রিয়গুলো</button><button id="pickPlay">▶ তালিকা চালাও</button></div>
   </section>
   <main id="list"></main>
 </div>
+<div id="hifz" hidden><p id="hifzMsg">এবার আপনি লাইনটা বলুন</p><div><button type="button" id="hifzAgain">↻ আবার শুনুন</button><button type="button" id="hifzNext">পরের লাইন ▶</button></div></div>
 <div class="sheet" id="sheet" hidden>
   <div class="sp" role="dialog" aria-label="সেটিংস">
     <div class="row"><h2 style="flex:1">মুখস্থের সেটিং</h2><button class="ib" id="sheetClose" aria-label="বন্ধ">✕</button></div>
@@ -138,7 +155,7 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=24"></script>
-<script src="app.js?v=24"></script>
+<script src="data.js?v=25"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>

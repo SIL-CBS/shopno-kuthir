@@ -5,7 +5,7 @@
   const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', listLoop: true, speed: 1, showBn: true, showMeaning: false, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
-  if (!Array.isArray(S.sel)) S.sel = [];
+  if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
   /* ---------- দিন: ৭ দিনের তালিকা; যে দিনের লেখা এখনো নেই, সেটা পুরো ফাইল এক টানা বাজে ---------- */
   const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল']];
   let DAYID = 'friday'; try { DAYID = localStorage.getItem('mm_day') || 'friday'; } catch (e) {}
@@ -31,16 +31,19 @@
   /* ---------- শোনার তালিকা (বাছাই) ---------- */
   const queue = () => (S.sel.length ? [...S.sel].sort((a, b) => a - b) : duas.map((_, i) => i));
   const isSel = (i) => S.sel.includes(i);
+  const favs = (id = DAYID) => S.fav[id] || [], isFav = (i) => favs().includes(i);
   /* ---------- প্লেয়ার ইঞ্জিন ---------- */
   const media = $('#media'); let plan = null, timer = null, wantPlay = false;
   const buildPlan = (i) => { const out = [], d = duas[i];
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j); for (let r = 1; r <= S.reps; r++) out.push({i, j, s, e, rep: r, of: S.reps}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
+    else if (S.mode === 'hifz') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j); out.push({i, j, s, e, rep: 1, of: 1, wait: true}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
-  const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode === 'line') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
+  const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
   const startItem = () => { clearTimeout(timer); const it = plan && plan.items[plan.k]; if (!it) return finishDua(); wantPlay = true; media.playbackRate = S.speed; media.currentTime = Math.max(0, it.s - LEAD); const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); };
-  const finishItem = () => { media.pause(); plan.k++; const it = plan.items[plan.k]; if (!it) return finishDua(); status('বিরতি'); timer = setTimeout(startItem, S.gap * 1000); };
+  let hifzWait = false; const hifzShow = (on) => { hifzWait = on; $('#hifz').hidden = !on; };
+  const finishItem = () => { media.pause(); const cur = plan.items[plan.k]; if (cur && cur.wait) { wantPlay = false; hifzShow(true); const d = duas[cur.i]; $('#hifzMsg').textContent = 'এবার আপনি বলুন — লাইন ' + bn(cur.j + 1) + '/' + bn(d.lines.length); status('আপনার পালা'); renderBar(); return; } plan.k++; const it = plan.items[plan.k]; if (!it) return finishDua(); status('বিরতি'); timer = setTimeout(startItem, S.gap * 1000); };
   const nextInQueue = (i, dir) => { const q = queue(); let k = q.indexOf(i);
     if (k < 0) { const after = q.filter((x) => (dir > 0 ? x > i : x < i)); return after.length ? (dir > 0 ? after[0] : after[after.length - 1]) : null; }
     k += dir; if (k >= q.length) return S.listLoop ? q[0] : null; if (k < 0) return S.listLoop ? q[q.length - 1] : q[0]; return q[k]; };
@@ -50,9 +53,10 @@
     plan = null; status('শেষ'); render(); };
   const tick = () => { const t = media.currentTime, it = plan && plan.items[plan.k]; if (it && wantPlay && !media.paused && t >= it.e) finishItem(); highlight(it && it.j != null ? null : t, it); if (!media.paused) requestAnimationFrame(tick); };
   media.addEventListener('play', () => requestAnimationFrame(tick)); media.addEventListener('seeked', () => tick());
-  const stop = () => { clearTimeout(timer); wantPlay = false; media.pause(); plan = null; status(); render(); };
+  const hifzGo = (again) => { if (!plan) return; hifzShow(false); if (!again) plan.k++; startItem(); };
+  const stop = () => { hifzShow(false); clearTimeout(timer); wantPlay = false; media.pause(); plan = null; status(); render(); };
   const startList = () => { const q = queue(); playDua(q.includes(S.dua) ? S.dua : q[0]); };
-  const toggle = () => { if (!media.src) return; if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); wantPlay = false; status('থামানো'); } else if (plan) { wantPlay = true; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } else startList(); renderBar(); };
+  const toggle = () => { if (!media.src) return; if (hifzWait) return hifzGo(false); if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); wantPlay = false; status('থামানো'); } else if (plan) { wantPlay = true; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } else startList(); renderBar(); };
   /* ---------- দেখানো ---------- */
   const status = (msg) => { const it = plan && plan.items[plan.k], el = $('#status'); if (!el) return;
     if (!it) { el.textContent = msg || 'থামানো'; renderBar(); return; }
@@ -76,13 +80,19 @@
     $('#reps').textContent = bn(S.reps) + '×'; $('#gap').textContent = bn(S.gap) + ' সে.'; $('#whole').textContent = bn(S.whole) + '×'; $('#wholeRow').hidden = S.mode !== 'line';
     renderPick();
     $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua, n = nd(i), sel = isSel(i);
-      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button></div>' +
+      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button><button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
         (open ? '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '"><div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
           '<div class="nudge"><span>সময় ঠিক করুন</span><button data-nudge="' + i + ':0:-0.25">শুরু −</button><button data-nudge="' + i + ':0:0.25">শুরু +</button><button data-nudge="' + i + ':1:-0.25">শেষ −</button><button data-nudge="' + i + ':1:0.25">শেষ +</button><small>' + (n[0] || n[1] ? 'শুরু ' + n[0] + ' / শেষ ' + n[1] + ' সে.' : '') + '</small></div></div>' : '') + '</article>'; }).join('');
     lastHL = ''; const ci = plan && plan.items[plan.k]; highlight(ci && ci.j != null ? null : (media.currentTime || 0), ci); status(); };
   /* ---------- ইভেন্ট ---------- */
   document.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (!b) return; const ds = b.dataset;
     if (ds.pick != null) { const i = +ds.pick; S.sel = isSel(i) ? S.sel.filter((x) => x !== i) : [...S.sel, i]; save(); render(); return; }
+    if (ds.fav != null) { const i = +ds.fav, f = favs(); S.fav[DAYID] = f.includes(i) ? f.filter((x) => x !== i) : [...f, i].sort((x, y) => x - y); save(); render(); if ($('#favBtn').getAttribute('aria-pressed') === 'true') showFavs(); return; }
+    if (b.id === 'pickFav') { if (!favs().length) { $('#pickInfo').textContent = 'এই দিনে কোনো প্রিয় দোয়া নেই — দোয়ার পাশে ☆ চাপুন'; return; } S.sel = [...favs()]; save(); render(); return; }
+    if (b.id === 'favBtn') { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); $('#q').value = ''; if (on) showFavs(); else $('#qres').innerHTML = ''; return; }
+    if (ds.go) { const [id, i] = ds.go.split(':'); goTo(id, +i); return; }
+    if (b.id === 'hifzNext') return hifzGo(false);
+    if (b.id === 'hifzAgain') return hifzGo(true);
     if (b.id === 'pickAll') { S.sel = duas.map((_, i) => i); save(); render(); return; }
     if (b.id === 'pickNone') { S.sel = []; save(); render(); return; }
     if (b.id === 'pickPlay') { if (!media.src) return; stop(); startList(); return; }
@@ -97,9 +107,9 @@
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
   $('#sheet').addEventListener('click', (ev) => { if (ev.target.id === 'sheet') $('#sheet').hidden = true; });
-  document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode === 'line') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
+  document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode !== 'dua') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
   $('#file').addEventListener('change', async (ev) => { const f = ev.target.files[0]; if (!f) return; $('#fileMsg').textContent = 'রাখা হচ্ছে…'; try { await putMedia(DAYKEY, f); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); await loadMedia(); } catch (e) { $('#fileMsg').textContent = 'রাখা যায়নি: ' + e.message; } });
-  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ২৪'; };
+  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ২৫'; };
   if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', toggle); navigator.mediaSession.setActionHandler('pause', toggle); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
   $('#dayTitle').textContent = day.title; $('#dayRange').textContent = day.range; const src = $('#mnSrc'); if (src && day.mnSrc) src.href = day.mnSrc;
@@ -122,6 +132,28 @@
       const c = document.createElement('button'); c.type = 'button'; c.textContent = 'লিংক কপি';
       c.onclick = async (e) => { e.stopPropagation(); try { await navigator.clipboard.writeText(url); c.textContent = '✓ কপি হয়েছে'; } catch (x) { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); c.textContent = '✓ কপি হয়েছে'; } catch (y) { c.textContent = 'কপি হয়নি'; } ta.remove(); } setTimeout(() => { c.textContent = 'লিংক কপি'; }, 2000); };
       r.append(t, a, c); box.appendChild(r); }); })();
+  /* ---------- খোঁজা ও প্রিয় (৭ দিন জুড়ে) ---------- */
+  const DN = Object.fromEntries(DAYS.map((d) => [d[0], d[1]]));
+  const nb = (s) => String(s || '').toLowerCase().replace(/[০-৯]/g, (c) => BN.indexOf(c)).replace(/[\-‘’'ʼ,،.।:;!?()…]/g, '').replace(/\s+/g, ' ').trim();
+  const na = (s) => String(s || '').replace(/[ً-ٰٟۖ-ۭـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي');
+  const IDX = []; DATA.days.forEach((dd) => dd.duas.forEach((d, i) => { IDX.push({id: dd.id, i, no: d.no, noN: nb(d.no), bn: d.lines.map((L) => L.bn).join(' '), mn: d.lines.map((L) => L.mn || '').join(' '), ar: na(d.lines.map((L) => L.ar).join(' ')), first: d.lines[0].ar}); }));
+  const snip = (txt, q) => { const t = String(txt), w = q.split(' ')[0]; let k = t.toLowerCase().indexOf(w); if (k < 0) k = 0; const a = k > 30 ? t.lastIndexOf(' ', k - 25) + 1 : 0; let z = t.indexOf(' ', a + 110); if (z < 0) z = t.length; const part = t.slice(a, z); const re = new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'); return (a ? '…' : '') + esc(part).replace(re, (m) => '<mark>' + m + '</mark>') + (z < t.length ? '…' : ''); };
+  const rowHtml = (r, body) => '<button type="button" class="qr" data-go="' + r.id + ':' + r.i + '"><b>' + esc(DN[r.id]) + ' · দোয়া ' + esc(r.no) + '</b>' + (r.id === DAYID ? '<small>এই দিন</small>' : '') + '<span>' + body + '</span></button>';
+  const doSearch = () => { const raw = $('#q').value, q = nb(raw), qa = na(raw.trim()), box = $('#qres'); $('#favBtn').setAttribute('aria-pressed', 'false');
+    if (q.length < 2 && !/^\d+$/.test(q)) { box.innerHTML = q ? '<div class="qn">অন্তত দুই অক্ষর লিখুন</div>' : ''; return; }
+    const hits = [];
+    for (const r of IDX) { let body = null;
+      if (/^\d+$/.test(q)) { if (r.noN === q) body = '<span lang="ar" dir="rtl">' + esc(r.first) + '</span>'; }
+      else if (/[؀-ۿ]/.test(qa)) { if (r.ar.includes(qa)) body = '<span lang="ar" dir="rtl">' + esc(r.first) + '</span>'; }
+      else if (nb(r.mn).includes(q)) body = snip(r.mn, q); else if (nb(r.bn).includes(q)) body = snip(r.bn, q);
+      if (body) hits.push(rowHtml(r, body)); if (hits.length >= 40) break; }
+    box.innerHTML = hits.length ? '<div class="qn">' + bn(hits.length) + (hits.length >= 40 ? '+' : '') + 'টি দোয়া পাওয়া গেছে — চাপলে খুলবে</div>' + hits.join('') : '<div class="qn">কিছু পাওয়া যায়নি</div>'; };
+  let qt = 0; $('#q').addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(doSearch, 200); });
+  function showFavs() { const rows = []; DAYS.forEach(([id]) => (S.fav[id] || []).forEach((i) => { const r = IDX.find((x) => x.id === id && x.i === i); if (r) rows.push(rowHtml(r, '<span lang="ar" dir="rtl">' + esc(r.first) + '</span>')); }));
+    $('#qres').innerHTML = rows.length ? '<div class="qn">আপনার প্রিয় দোয়া — ' + bn(rows.length) + 'টি</div>' + rows.join('') : '<div class="qn">এখনো কোনো প্রিয় দোয়া নেই — দোয়ার পাশে ☆ চাপুন</div>'; }
+  function goTo(id, i) { if (id === DAYID) { stop(); S.dua = i; save(); render(); const el = $('#d-' + i); if (el) el.scrollIntoView({block: 'start', behavior: 'smooth'}); return; }
+    save(); S.perDay[id] = Object.assign({}, S.perDay[id] || {}, {dua: i}); try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('mm_day', id); sessionStorage.setItem('mm_go', '1'); } catch (e) {} location.reload(); }
   render(); loadMedia(); drawDays();
+  try { if (sessionStorage.getItem('mm_go')) { sessionStorage.removeItem('mm_go'); const el = $('#d-' + S.dua); if (el) setTimeout(() => el.scrollIntoView({block: 'start'}), 50); } } catch (e) {}
   try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}
 })();
