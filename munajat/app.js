@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 39, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 40, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [40, '১৬ নভে ২০২৬', ['ⓘ পাতায় উৎসের হিসাব — কয়টা পাওয়া গেছে, কয়টা যায়নি, আর বাকি দোয়ার নম্বর']],
     [39, '১৬ নভে ২০২৬', ['রবি, সোম, মঙ্গলবারের দোয়ার উৎস (হাদিসের কিতাব ও রাবি)', 'বুধ ও শুক্রবারের কিছু দোয়ার উৎস; বাকিগুলো যাচাই চলছে']],
     [38, '১৬ নভে ২০২৬', ['দোয়ার উৎস এখন দোয়া নম্বরের লাইনেই (আলাদা লাইন নয়)']],
     [37, '১৬ নভে ২০২৬', ['নতুন সংস্করণ এলে অ্যাপ নিজে থেকে খুঁজে নেয় ও চালু করে (বাজানো চললে উপরে বোতাম দেখায়)']],
@@ -175,6 +176,9 @@
   function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; const q = d.duas.filter((x) => x.ref && x.ref.t === 'q').length, h = d.duas.filter((x) => x.ref && x.ref.t === 'h').length; const tot = d.duas.filter((x) => /^[০-৯]/.test(x.no)).length; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ<br><span class="mu">উৎস: ' + (q + h ? '📖 ' + bn(q) + ' · 📜 ' + bn(h) + (tot - q - h > 0 ? ' · বাকি ' + bn(tot - q - h) : ' · সব ✓') : 'এখনো যোগ হয়নি') + '</span></td></tr>'; }).join('');
     $('#aboutBody').innerHTML = '<div class="vb"><div><div class="mu">অ্যাপ সংস্করণ</div><b>' + bn(APPVER) + '</b></div><div class="mu">হালনাগাদ: ' + APPDATE + '<br>মুনাজাতে মাকবূল · ৭ দিনের দোয়া</div></div>'
       + '<h3>কী নতুন</h3>' + CHANGES.map((c, k) => '<details' + (k === 0 ? ' open' : '') + '><summary>সংস্করণ ' + bn(c[0]) + ' <span class="mu">· ' + c[1] + '</span></summary><ul>' + c[2].map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></details>').join('')
+      + (() => { let got = 0, all = 0; const miss = []; DATA.days.forEach((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id]; const m = []; d.duas.forEach((x) => { if (!/^[০-৯]/.test(x.no)) return; all++; if (x.ref) got++; else m.push(x.no); }); if (m.length) miss.push('<tr><td>' + esc(dm[1]) + ' (' + bn(m.length) + ')</td><td>' + m.map(esc).join(', ') + '</td></tr>'); });
+          return '<h3>দোয়ার উৎস — হিসাব</h3><div class="vb"><div><div class="mu">পাওয়া গেছে</div><b>' + bn(got) + '</b></div><div><div class="mu">পাওয়া যায়নি</div><b style="color:#b3261e">' + bn(all - got) + '</b></div><div class="mu">মোট ' + bn(all) + 'টি দোয়া</div></div>'
+            + (miss.length ? '<p class="mu" style="margin:8px 0 4px">যেসব দোয়ার উৎস এখনো নেই (নম্বর বলে দিলে খুঁজে বসানো যাবে):</p><table>' + miss.join('') + '</table>' : '<p>সব দোয়ার উৎস যোগ হয়েছে ✓</p>'); })()
       + '<h3>কোন দিনে কোন দোয়া</h3><table>' + rows + '</table>'
       + '<h3>তথ্যসূত্র</h3><p>আরবি পাঠ: মাওলানা আশরাফ আলী থানভী (রহ.)-এর মুনাজাতে মাকবূল — YouTube ভিডিওর বইয়ের পাতা থেকে পড়া। বাংলা উচ্চারণ ও অর্থ নিজস্ব; বইয়ের সাথে মিলিয়ে নিন।</p>'
       + '<h3>গোপনীয়তা</h3><p>অডিও ফাইল, প্রিয় তালিকা ও সেটিং শুধু এই ফোন/কম্পিউটারেই থাকে — কোথাও পাঠানো হয় না।</p>'
