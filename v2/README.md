@@ -83,3 +83,10 @@
 2. `setup` ফাংশন একবার চালান। `Keys` ট্যাবে ৩টা কী আসবে।
 3. Deploy › New deployment › Web app (Execute as: Me, Access: Anyone)। যে URL আসবে সেটা অ্যাপে বসানো হয়।
 4. কোড বদলালে: Deploy › Manage deployments › Edit › New version।
+
+## ছবি Inbox ও ভয়েস এন্ট্রি
+- অ্যাডমিন অ্যাপের "ছবি" পাতা থেকে ছবি আপলোড করে → Drive "Inbox" ফোল্ডার + শিটের Inbox ট্যাব।
+- নির্ধারিত কাজ (প্রতিদিন ০৮–২২টা, ঘণ্টায় একবার) ছবি পড়ে Drive "Results"-এ `res_<id>.json` রাখে; Apps Script `ingest()` (১০ মিনিট পরপর) সেটা "অপেক্ষমাণ" এন্ট্রি হিসেবে শিটে বসায়।
+- অ্যাডমিন অ্যাপে সতর্কতা দেখে ✏ সম্পাদনা / ✓ অনুমোদন / ✕ মুছে দেয়। Claude-কে চ্যাটে "inbox" লিখলে তখনই পড়ে।
+- এন্ট্রি পাতায় 🎤 বাটন: বাংলায় বললে (Chrome) তারিখ/অঙ্ক/বিবরণ বসে যায়।
+- Code.gs নতুন ভার্সনে ডেপ্লয় করতে হয় (Deploy → Manage deployments → Edit → New version); একবার `setup2` চালাতে হয়।
