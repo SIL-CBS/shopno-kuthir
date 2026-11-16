@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 32, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 33, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [33, '১৬ নভে ২০২৬', ['২–৩ সেকেন্ড পর আওয়াজ থেমে আবার চলা ঠিক করা (চুপ করে শুরুর কৌশল বাদ)']],
     [32, '১৬ নভে ২০২৬', ['শনিবার: ২২টি দোয়ার শুরু ক্বারী সাহেবের শ্বাস নেওয়ার বিরতিতে সরানো (দোয়া ২-সহ) — আগের দোয়ার শেষ অংশ আর আসবে না']],
     [31, '১৬ নভে ২০২৬', ['"অডিওর সময় মেলান" এখন প্রতি চাপে ৫০০ মি.সে. (আগে/পরে দুই দিকেই)']],
     [30, '১৬ নভে ২০২৬', ['ফাইলে ভিডিও থাকলে লাল সতর্কতা — লক স্ক্রিনে চালাতে শুধু অডিও (.m4a) লাগে']],
@@ -70,7 +71,7 @@
     /* পর্দা খোলা: চুপ করে একটু আগে থেকে চালু, ঠিক শুরুতে আওয়াজ — যাতে আগের অংশের কোনো টুকরো (ফোনের বাফার) না বাজে।
        পর্দা বন্ধ/পেছনে: থামানো ছাড়াই সরাসরি লাফ, যাতে লক স্ক্রিনে প্লেয়ার বন্ধ না হয়। */
     if (document.hidden && !media.paused) { lg('jump(bg)', 'dua', duas[it.i].no, 'target', x.toFixed(2)); unmuteAt = 0; media.muted = false; media.currentTime = x; return; }
-    lg('start', 'dua', duas[it.i].no, 'line', it.j == null ? '-' : it.j + 1, 'target', x.toFixed(2), 'end', (it.e + OFF()).toFixed(2)); unmuteAt = x; media.muted = true; media.currentTime = Math.max(0, x - 0.15);
+    lg('start', 'dua', duas[it.i].no, 'line', it.j == null ? '-' : it.j + 1, 'target', x.toFixed(2), 'end', (it.e + OFF()).toFixed(2)); unmuteAt = 0; media.muted = false; media.currentTime = x; /* চুপ-করে-শুরু বাদ: Android-এ এতে ২–৩ সে. পর আওয়াজ থেমে আবার চলত */
     const go = () => { const p = media.play(); if (p && p.catch) p.catch(() => {}); };
     if (media.seeking) media.addEventListener('seeked', go, {once: true}); else go(); };
   let hifzWait = false; const hifzShow = (on) => { hifzWait = on; $('#hifz').hidden = !on; };
