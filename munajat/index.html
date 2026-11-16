@@ -164,6 +164,8 @@ body:not(.m-line) .lrep{display:none}
     <div class="grp st" id="wholeRow"><div><span>শেষে পুরো দোয়া একসাথে<small>লাইনগুলো জোড়া দিতে</small></span></div><div><button data-step="whole:-1" aria-label="কমান">−</button><output id="whole"></output><button data-step="whole:1" aria-label="বাড়ান">+</button></div></div>
     <div class="grp"><span>দোয়া শেষ হলে</span><div class="seg"><button data-set="after:next">তালিকার পরেরটা</button><button data-set="after:loop">এটাই আবার</button><button data-set="after:stop">থামো</button></div></div>
     <div class="grp"><span>তালিকার শেষ দোয়ার পর</span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-tg="listLoop">আবার প্রথম থেকে</button></div><small style="color:var(--muted);font-size:12px">বন্ধ থাকলে তালিকা একবার শেষ হয়ে থামবে</small></div>
+    <div class="grp"><span>বাংলা অর্থ শোনাও <small style="color:#b3261e">(পরীক্ষামূলক: শুধু শনিবার দোয়া ১–২)</small></span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-set="tts:off">বন্ধ</button><button data-set="tts:line">প্রতি লাইনের পরে</button><button data-set="tts:dua">পুরো দোয়ার পরে</button><button data-set="tts:only">শুধু অর্থ</button></div>
+      <div class="seg" style="margin-top:6px"><button data-set="ttsRate:0.8">ধীরে</button><button data-set="ttsRate:1">স্বাভাবিক</button><button data-set="ttsRate:1.2">দ্রুত</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px">ফোনের বাংলা কণ্ঠ দিয়ে পড়ে। না শোনালে: ফোনের Settings → Google Text-to-Speech → বাংলা (বাংলাদেশ) কণ্ঠ নামান।</small></div>
     <div class="grp"><span>দোয়ার উৎস (কুরআন/হাদিস)</span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-tg="refLinks">উৎসের লিংক খুলবে</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px">চালু করলে উৎসে চাপলে quran.com / sunnah.com খুলবে। বন্ধ থাকলে বা নেট না থাকলে শুধু লেখা দেখাবে।</small></div>
     <div class="grp"><span>গতি</span><div class="seg"><button data-set="speed:0.75">০.৭৫×</button><button data-set="speed:1">১×</button><button data-set="speed:1.25">১.২৫×</button></div></div>
     <div class="grp"><span>আরবির আকার</span><div class="seg"><button data-set="font:24">ছোট</button><button data-set="font:30">মাঝারি</button><button data-set="font:38">বড়</button></div></div>
@@ -173,7 +175,7 @@ body:not(.m-line) .lrep{display:none}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=41"></script>
-<script src="app.js?v=41"></script>
+<script src="data.js?v=42"></script>
+<script src="app.js?v=42"></script>
 </body>
 </html>

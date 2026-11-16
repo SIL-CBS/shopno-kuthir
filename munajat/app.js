@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 41, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 42, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [42, '১৬ নভে ২০২৬', ['পরীক্ষামূলক: বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — শুধু শনিবার দোয়া ১ ও ২', 'সেটিংসে: বন্ধ / প্রতি লাইনের পরে / পুরো দোয়ার পরে / শুধু অর্থ, আর কণ্ঠের গতি']],
     [41, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম নীল রঙে']],
     [40, '১৬ নভে ২০২৬', ['ⓘ পাতায় উৎসের হিসাব — কয়টা পাওয়া গেছে, কয়টা যায়নি, আর বাকি দোয়ার নম্বর']],
     [39, '১৬ নভে ২০২৬', ['রবি, সোম, মঙ্গলবারের দোয়ার উৎস (হাদিসের কিতাব ও রাবি)', 'বুধ ও শুক্রবারের কিছু দোয়ার উৎস; বাকিগুলো যাচাই চলছে']],
@@ -28,7 +29,7 @@
     [20, '১৫ নভে ২০২৬', ['শনিবার যোগ']],
     [19, '১৫ নভে ২০২৬', ['রবিবার যোগ, YouTube লিংক ও কপি বোতাম, ফাইল বদলান বোতাম']],
   ];
-  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', listLoop: true, speed: 1, showBn: true, showMeaning: false, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
+  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: false, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
   if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
@@ -81,14 +82,35 @@
   const refChip = (d) => { const r = d.ref; if (!r) return ''; const live = S.refLinks && navigator.onLine, lab = (r.t === 'q' ? '📖 ' : '📜 ') + (r.short || r.txt), tip = esc(r.txt);
     return live ? '<a class="rh" href="' + esc(r.url) + '" target="_blank" rel="noopener" title="' + tip + '">' + esc(lab) + ' ↗</a>' : '<span class="rh" title="' + tip + '">' + esc(lab) + '</span>'; };
   addEventListener('online', () => render()); addEventListener('offline', () => render());
-  const buildPlan = (i) => { const out = [], d = duas[i];
+  /* ---------- বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — পরীক্ষামূলক: শুধু শনিবার দোয়া ১–২ ---------- */
+  const TTS_TEST = (i) => DAYID === 'saturday' && i <= 1;
+  const ttsOn = (i) => S.tts && S.tts !== 'off' && TTS_TEST(i) && 'speechSynthesis' in window;
+  let ttsBusy = false, bnVoice = null;
+  const pickVoice = () => { try { const vs = speechSynthesis.getVoices(); bnVoice = vs.find((v) => /^bn[-_]BD/i.test(v.lang)) || vs.find((v) => /^bn/i.test(v.lang)) || null; } catch (e) {} return bnVoice; };
+  if ('speechSynthesis' in window) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+  const ttsNext = () => { ttsBusy = false; if (!plan) return; plan.k++; const n = plan.items[plan.k]; if (!n) return finishDua(); later(startItem, document.hidden ? 0 : 400); };
+  const speakItem = (it) => { media.pause(); wantPlay = true; highlight(null, it); renderBar();
+    if (!pickVoice()) { status('ফোনে বাংলা কণ্ঠ পাওয়া যায়নি — অর্থ বাদ দিয়ে চলছে'); lg('tts', 'no-bn-voice'); return later(ttsNext, 1200); }
+    lg('tts', 'dua', duas[it.i].no, 'line', it.j == null ? '-' : it.j + 1, bnVoice.name);
+    status('অর্থ শোনানো হচ্ছে'); try { speechSynthesis.cancel(); } catch (e) {}
+    const u = new SpeechSynthesisUtterance(it.tts); u.lang = bnVoice.lang || 'bn-BD'; u.voice = bnVoice; u.rate = +S.ttsRate || 1;
+    u.onend = () => { if (ttsBusy && plan && plan.items[plan.k] === it) ttsNext(); }; u.onerror = (e) => { lg('tts-error', e.error || ''); if (ttsBusy && plan && plan.items[plan.k] === it) ttsNext(); };
+    ttsBusy = true; speechSynthesis.speak(u); };
+  const withTts = (i, base) => { if (!ttsOn(i) || S.mode === 'hifz') return base; const d = duas[i], mn = (j) => d.lines[j].mn || '';
+    const lineAudio = (j, rep, of) => { const [s, e] = lineSpan(i, j); return {i, j, s, e, rep, of}; };
+    if (S.tts === 'only') { const o = []; d.lines.forEach((_, j) => o.push({i, j, tts: mn(j), rep: 1, of: 1})); return o; }
+    if (S.tts === 'dua') { const o = base.slice(); o.push({i, j: null, tts: d.lines.map((_, j) => mn(j)).join(' '), rep: 1, of: 1}); return o; }
+    const o = []; base.forEach((it, k) => { if (it.j == null) { d.lines.forEach((_, j) => { o.push(lineAudio(j, it.rep, it.of)); o.push({i, j, tts: mn(j), rep: it.rep, of: it.of}); }); }
+      else { o.push(it); const nx = base[k + 1]; if (!nx || nx.j !== it.j) o.push({i, j: it.j, tts: mn(it.j), rep: 1, of: 1}); } }); return o; };
+  const buildPlan = (i) => withTts(i, buildPlan0(i));
+  const buildPlan0 = (i) => { const out = [], d = duas[i];
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
     else if (S.mode === 'hifz') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j); out.push({i, j, s, e, rep: 1, of: 1, wait: true}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
   const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
-  const startItem = () => { clearTimeout(timer); pend = null; const it = plan && plan.items[plan.k]; if (!it) return finishDua(); wantPlay = true; media.playbackRate = S.speed; const x = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); status(); meta(it);
+  const startItem = () => { clearTimeout(timer); pend = null; const it = plan && plan.items[plan.k]; if (!it) return finishDua(); if (it.tts != null) return speakItem(it); wantPlay = true; media.playbackRate = S.speed; const x = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); status(); meta(it);
     /* পর্দা খোলা: চুপ করে একটু আগে থেকে চালু, ঠিক শুরুতে আওয়াজ — যাতে আগের অংশের কোনো টুকরো (ফোনের বাফার) না বাজে।
        পর্দা বন্ধ/পেছনে: থামানো ছাড়াই সরাসরি লাফ, যাতে লক স্ক্রিনে প্লেয়ার বন্ধ না হয়। */
     if (document.hidden && !media.paused) { lg('jump(bg)', 'dua', duas[it.i].no, 'target', x.toFixed(2)); unmuteAt = 0; media.muted = false; media.currentTime = x; return; }
@@ -116,9 +138,9 @@
     /* বিরতির মাঝে পর্দা বন্ধ হলে অপেক্ষা না করে এখনই পরেরটা চালু — পেছনে থেকে নতুন করে শুরু করতে ফোন বাধা দিতে পারে */
     if (document.hidden && pend) { clearTimeout(timer); const f = pend; pend = null; f(); } });
   const hifzGo = (again) => { if (!plan) return; hifzShow(false); if (!again) plan.k++; startItem(); };
-  const stop = () => { hifzShow(false); clearTimeout(timer); pend = null; unmuteAt = 0; media.muted = false; wantPlay = false; media.pause(); plan = null; status(); render(); };
+  const stop = () => { ttsBusy = false; try { speechSynthesis.cancel(); } catch (e) {} hifzShow(false); clearTimeout(timer); pend = null; unmuteAt = 0; media.muted = false; wantPlay = false; media.pause(); plan = null; status(); render(); };
   const startList = () => { const q = queue(); playDua(q.includes(S.dua) ? S.dua : q[0]); };
-  const toggle = () => { if (!media.src) return; if (hifzWait) return hifzGo(false); if (pend) { clearTimeout(timer); pend = null; wantPlay = false; status('থামানো'); renderBar(); return; } if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); media.muted = false; wantPlay = false; status('থামানো'); } else if (plan) { const it = plan.items[plan.k], t = media.currentTime - OFF(); if (!it || t < it.s - 0.2 || t >= it.e - 0.05) { startItem(); } else { wantPlay = true; media.muted = false; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } } else startList(); renderBar(); };
+  const toggle = () => { if (!media.src) return; if (hifzWait) return hifzGo(false); if (ttsBusy) { ttsBusy = false; try { speechSynthesis.cancel(); } catch (e) {} wantPlay = false; status('থামানো'); renderBar(); return; } if (pend) { clearTimeout(timer); pend = null; wantPlay = false; status('থামানো'); renderBar(); return; } if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); media.muted = false; wantPlay = false; status('থামানো'); } else if (plan) { const it = plan.items[plan.k], t = media.currentTime - OFF(); if (!it || it.tts != null || t < it.s - 0.2 || t >= it.e - 0.05) { startItem(); } else { wantPlay = true; media.muted = false; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } } else startList(); renderBar(); };
   /* ---------- দেখানো ---------- */
   const status = (msg) => { const it = plan && plan.items[plan.k], el = $('#status'); if (!el) return;
     if (!it) { el.textContent = msg || 'থামানো'; renderBar(); return; }
@@ -161,7 +183,7 @@
     if (ds.dua != null) { const i = +ds.dua; if (i !== S.dua) { stop(); S.dua = i; save(); render(); $('#d-' + i).scrollIntoView({block: 'start', behavior: 'smooth'}); } if (media.src) playDua(i); return; }
     if (ds.tg) { S[ds.tg] = !S[ds.tg]; save(); render(); return; }
     if (ds.off != null) { if (!S.off) S.off = {}; const v = +ds.off; S.off[DAYID] = v === 0 ? 0 : Math.round(((+S.off[DAYID] || 0) + v) * 100) / 100; save(); offInfo(); if (plan) playDua(S.dua); return; }
-    if (ds.set) { const [k, v] = ds.set.split(':'); S[k] = isNaN(+v) ? v : +v; save(); if (plan && (k === 'mode' || k === 'speed')) playDua(S.dua); else render(); return; }
+    if (ds.set) { const [k, v] = ds.set.split(':'); S[k] = isNaN(+v) ? v : +v; save(); if (plan && (k === 'mode' || k === 'speed' || k === 'tts')) playDua(S.dua); else render(); return; }
     if (ds.step) { const [k, dv] = ds.step.split(':'), lim = {reps: [1, 33], gap: [0, 30], whole: [0, 11]}[k]; S[k] = Math.min(lim[1], Math.max(lim[0], S[k] + +dv)); save(); render(); return; }
     if (ds.nudge) { const [i, w, dv] = ds.nudge.split(':'), n = (S.nudge[i] = S.nudge[i] || [0, 0]); n[+w] = Math.round((n[+w] + +dv) * 100) / 100; save(); render(); const [s, e] = duaSpan(+i); if (media.src) media.currentTime = +w === 0 ? s : Math.max(s, e - 3); return; }
     if (b.id === 'play') return toggle();
