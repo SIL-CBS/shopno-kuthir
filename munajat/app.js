@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 35, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 36, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [36, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম ও ✕ বোতাম এখন উপরে আটকে থাকে', 'শনিবারের ৫৪টি দোয়ার উৎস — কুরআনের সূরা:আয়াত, হাদিসের কিতাব ও নম্বর', 'সেটিংসে "উৎসের লিংক খুলবে" (শুরুতে বন্ধ; নেট না থাকলে নিজে বন্ধ)']],
     [35, '১৬ নভে ২০২৬', ['বাজানো চলার সময় লাইনের ×বার বদলালেও সাথে সাথে কাজ করে']],
     [34, '১৬ নভে ২০২৬', ['প্রতিটি লাইনের পাশে ×৩ বোতাম — চাপলে ওই লাইন কতবার বাজবে বদলায় (১,২,৩,৪,৫,৭,১০; আবার চাপলে সেটিংসের মান)', '"লাইন ধরে" মোডে কাজ করে']],
     [33, '১৬ নভে ২০২৬', ['২–৩ সেকেন্ড পর আওয়াজ থেমে আবার চলা ঠিক করা (চুপ করে শুরুর কৌশল বাদ)']],
@@ -68,6 +69,11 @@
   const lrepBtn = (i, j) => { const v = S.lrep && S.lrep[i + ':' + j]; return '<button type="button" class="lrep' + (v ? ' set' : '') + '" data-lrep="' + i + ':' + j + '" aria-label="এই লাইন কতবার">×' + bn(v || S.reps) + '</button>'; };
   /* বাজানো চলার মাঝে কোনো লাইনের "কতবার" বদলালে বাকি পরিকল্পনা নতুন করে — এখনকার লাইন থেকেই চলবে */
   const replan = (i) => { if (!plan || !plan.items.length || plan.items[0].i !== i) return; const cur = plan.items[plan.k]; const items = buildPlan(i); let k = cur ? items.findIndex((x) => x.j === cur.j && x.whole === cur.whole && x.rep === Math.min(cur.rep, x.of)) : -1; if (k < 0 && cur) k = items.findIndex((x) => x.j === cur.j); plan = {items, k: Math.max(0, k)}; status(); };
+  /* দোয়ার উৎস — লিংক শুধু সেটিং চালু থাকলে আর নেট থাকলে */
+  const refHtml = (d) => { const r = d.ref; if (!r) return ''; const live = S.refLinks && navigator.onLine; const parts = r.more && r.more.length ? r.more : [[r.url, r.txt]];
+    const note = r.more && r.txt.indexOf(' — ') > 0 ? '<span>' + esc(r.txt.split(' — ')[0]) + ':</span>' : '';
+    return '<div class="ref"><span class="rt">' + (r.t === 'q' ? '📖 কুরআন' : '📜 হাদিস') + '</span>' + note + parts.map((p) => live ? '<a href="' + esc(p[0]) + '" target="_blank" rel="noopener">' + esc(p[1]) + ' ↗</a>' : '<span class="rl">' + esc(p[1]) + '</span>').join('') + (S.refLinks && !navigator.onLine ? '<span class="off">(অফলাইন — লিংক বন্ধ)</span>' : '') + '</div>'; };
+  addEventListener('online', () => render()); addEventListener('offline', () => render());
   const buildPlan = (i) => { const out = [], d = duas[i];
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
@@ -130,7 +136,7 @@
     renderPick();
     $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua, n = nd(i), sel = isSel(i);
       return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button><button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
-        (open ? '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '">' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
+        (open ? refHtml(d) + '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '">' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
           '<div class="nudge"><span>সময় ঠিক করুন</span><button data-nudge="' + i + ':0:-0.25">শুরু −</button><button data-nudge="' + i + ':0:0.25">শুরু +</button><button data-nudge="' + i + ':1:-0.25">শেষ −</button><button data-nudge="' + i + ':1:0.25">শেষ +</button><small>' + (n[0] || n[1] ? 'শুরু ' + n[0] + ' / শেষ ' + n[1] + ' সে.' : '') + '</small></div></div>' : '') + '</article>'; }).join('');
     lastHL = ''; const ci = plan && plan.items[plan.k]; highlight(ci && ci.j != null ? null : (media.currentTime || 0), ci); status(); };
   /* ---------- ইভেন্ট ---------- */
@@ -161,7 +167,7 @@
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
   $('#about').addEventListener('click', (ev) => { if (ev.target.id === 'about') $('#about').hidden = true; });
-  function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ</td></tr>'; }).join('');
+  function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; const q = d.duas.filter((x) => x.ref && x.ref.t === 'q').length, h = d.duas.filter((x) => x.ref && x.ref.t === 'h').length; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ<br><span class="mu">উৎস: ' + (q + h ? '📖 ' + bn(q) + ' · 📜 ' + bn(h) + (d.duas.length - q - h > 0 ? ' · বাকি ' + bn(d.duas.length - q - h) : ' · সব ✓') : 'এখনো যোগ হয়নি') + '</span></td></tr>'; }).join('');
     $('#aboutBody').innerHTML = '<div class="vb"><div><div class="mu">অ্যাপ সংস্করণ</div><b>' + bn(APPVER) + '</b></div><div class="mu">হালনাগাদ: ' + APPDATE + '<br>মুনাজাতে মাকবূল · ৭ দিনের দোয়া</div></div>'
       + '<h3>কী নতুন</h3>' + CHANGES.map((c, k) => '<details' + (k === 0 ? ' open' : '') + '><summary>সংস্করণ ' + bn(c[0]) + ' <span class="mu">· ' + c[1] + '</span></summary><ul>' + c[2].map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></details>').join('')
       + '<h3>কোন দিনে কোন দোয়া</h3><table>' + rows + '</table>'
