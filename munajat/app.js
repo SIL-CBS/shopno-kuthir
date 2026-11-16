@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 36, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 37, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [37, '১৬ নভে ২০২৬', ['নতুন সংস্করণ এলে অ্যাপ নিজে থেকে খুঁজে নেয় ও চালু করে (বাজানো চললে উপরে বোতাম দেখায়)']],
     [36, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম ও ✕ বোতাম এখন উপরে আটকে থাকে', 'শনিবারের ৫৪টি দোয়ার উৎস — কুরআনের সূরা:আয়াত, হাদিসের কিতাব ও নম্বর', 'সেটিংসে "উৎসের লিংক খুলবে" (শুরুতে বন্ধ; নেট না থাকলে নিজে বন্ধ)']],
     [35, '১৬ নভে ২০২৬', ['বাজানো চলার সময় লাইনের ×বার বদলালেও সাথে সাথে কাজ করে']],
     [34, '১৬ নভে ২০২৬', ['প্রতিটি লাইনের পাশে ×৩ বোতাম — চাপলে ওই লাইন কতবার বাজবে বদলায় (১,২,৩,৪,৫,৭,১০; আবার চাপলে সেটিংসের মান)', '"লাইন ধরে" মোডে কাজ করে']],
@@ -190,7 +191,12 @@
       v.removeAttribute('src'); v.load(); }, {once: true}); } catch (e) {} };
   const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); probeVideo(media.src); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ' + bn(APPVER); };
   if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', () => { if (media.paused) toggle(); }); navigator.mediaSession.setActionHandler('pause', () => { if (!media.paused) toggle(); }); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+  /* নতুন সংস্করণ: খুললেই খোঁজে, অ্যাপে ফিরলেও খোঁজে; পেলে বাজানো না চললে নিজে নতুন করে খোলে, চললে উপরে বোতাম দেখায় */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') { const hadCtl = !!navigator.serviceWorker.controller; let done = false;
+    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then((r) => { r.update().catch(() => {}); document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => {}); }); setInterval(() => r.update().catch(() => {}), 30 * 60 * 1000); }).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtl || done) return; done = true;
+      if (media.paused) { location.reload(); return; }
+      const p = document.createElement('button'); p.type = 'button'; p.textContent = '🔄 নতুন সংস্করণ এসেছে — চাপলে চালু হবে'; p.style.cssText = 'position:fixed;left:12px;right:12px;top:10px;z-index:40;min-height:46px;border:0;border-radius:14px;background:#e0b84c;color:#1b2a22;font:inherit;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.25)'; p.onclick = () => location.reload(); document.body.appendChild(p); }); }
   $('#dayTitle').textContent = day.title; $('#dayRange').textContent = day.range; const src = $('#mnSrc'); if (src && day.mnSrc) src.href = day.mnSrc;
   /* ---------- দিনের তালিকা ---------- */
   async function drawDays() { const box = $('#days'); if (!box) return; const keys = await mediaKeys(); const sz = {}; for (const k of keys) { try { const b = await getMedia(k); if (b) sz[k] = bn((b.size / 1048576).toFixed(1)) + ' MB'; } catch (e) {} }
