@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 37, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 38, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [38, '১৬ নভে ২০২৬', ['দোয়ার উৎস এখন দোয়া নম্বরের লাইনেই (আলাদা লাইন নয়)']],
     [37, '১৬ নভে ২০২৬', ['নতুন সংস্করণ এলে অ্যাপ নিজে থেকে খুঁজে নেয় ও চালু করে (বাজানো চললে উপরে বোতাম দেখায়)']],
     [36, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম ও ✕ বোতাম এখন উপরে আটকে থাকে', 'শনিবারের ৫৪টি দোয়ার উৎস — কুরআনের সূরা:আয়াত, হাদিসের কিতাব ও নম্বর', 'সেটিংসে "উৎসের লিংক খুলবে" (শুরুতে বন্ধ; নেট না থাকলে নিজে বন্ধ)']],
     [35, '১৬ নভে ২০২৬', ['বাজানো চলার সময় লাইনের ×বার বদলালেও সাথে সাথে কাজ করে']],
@@ -74,6 +75,8 @@
   const refHtml = (d) => { const r = d.ref; if (!r) return ''; const live = S.refLinks && navigator.onLine; const parts = r.more && r.more.length ? r.more : [[r.url, r.txt]];
     const note = r.more && r.txt.indexOf(' — ') > 0 ? '<span>' + esc(r.txt.split(' — ')[0]) + ':</span>' : '';
     return '<div class="ref"><span class="rt">' + (r.t === 'q' ? '📖 কুরআন' : '📜 হাদিস') + '</span>' + note + parts.map((p) => live ? '<a href="' + esc(p[0]) + '" target="_blank" rel="noopener">' + esc(p[1]) + ' ↗</a>' : '<span class="rl">' + esc(p[1]) + '</span>').join('') + (S.refLinks && !navigator.onLine ? '<span class="off">(অফলাইন — লিংক বন্ধ)</span>' : '') + '</div>'; };
+  const refChip = (d) => { const r = d.ref; if (!r) return ''; const live = S.refLinks && navigator.onLine, lab = (r.t === 'q' ? '📖 ' : '📜 ') + (r.short || r.txt), tip = esc(r.txt);
+    return live ? '<a class="rh" href="' + esc(r.url) + '" target="_blank" rel="noopener" title="' + tip + '">' + esc(lab) + ' ↗</a>' : '<span class="rh" title="' + tip + '">' + esc(lab) + '</span>'; };
   addEventListener('online', () => render()); addEventListener('offline', () => render());
   const buildPlan = (i) => { const out = [], d = duas[i];
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
@@ -136,8 +139,8 @@
     $('#reps').textContent = bn(S.reps) + '×'; $('#gap').textContent = bn(S.gap) + ' সে.'; $('#whole').textContent = bn(S.whole) + '×'; $('#wholeRow').hidden = S.mode !== 'line';
     renderPick();
     $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua, n = nd(i), sel = isSel(i);
-      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button><button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
-        (open ? refHtml(d) + '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '">' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
+      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button>' + refChip(d) + '<button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
+        (open ? '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '">' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
           '<div class="nudge"><span>সময় ঠিক করুন</span><button data-nudge="' + i + ':0:-0.25">শুরু −</button><button data-nudge="' + i + ':0:0.25">শুরু +</button><button data-nudge="' + i + ':1:-0.25">শেষ −</button><button data-nudge="' + i + ':1:0.25">শেষ +</button><small>' + (n[0] || n[1] ? 'শুরু ' + n[0] + ' / শেষ ' + n[1] + ' সে.' : '') + '</small></div></div>' : '') + '</article>'; }).join('');
     lastHL = ''; const ci = plan && plan.items[plan.k]; highlight(ci && ci.j != null ? null : (media.currentTime || 0), ci); status(); };
   /* ---------- ইভেন্ট ---------- */
