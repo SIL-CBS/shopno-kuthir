@@ -98,7 +98,7 @@ main{padding:6px 12px 120px}
       <button class="ib" id="sheetBtn" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
     </div>
     <div class="stage">
-      <video id="media" playsinline preload="auto"></video>
+      <audio id="media" preload="auto"></audio>
       <div>
         <div class="ctl">
           <button class="ib" id="prev" aria-label="আগের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button>
@@ -150,12 +150,12 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>গতি</span><div class="seg"><button data-set="speed:0.75">০.৭৫×</button><button data-set="speed:1">১×</button><button data-set="speed:1.25">১.২৫×</button></div></div>
     <div class="grp"><span>আরবির আকার</span><div class="seg"><button data-set="font:24">ছোট</button><button data-set="font:30">মাঝারি</button><button data-set="font:38">বড়</button></div></div>
     <div class="grp"><span>অডিও / ভিডিও ফাইল</span><div class="seg" style="grid-template-columns:1fr"><button id="addFile2">ফাইল বদলান — নতুন অডিও দিন</button></div><small style="display:block;margin-top:6px;color:var(--muted)">নতুন ফাইল পুরনোটার জায়গা নেবে; পুরনোটা নিজে মুছে যাবে।</small></div>
-    <div class="grp"><span>ভিডিও</span><div class="seg"><button data-tg="video">ভিডিও দেখাও</button></div></div>
+    <div class="grp"><span>অডিওর সময় মেলান (এই দিন)</span><div class="seg"><button type="button" data-off="-0.05">◀ আগে ৫০ মি.সে.</button><button type="button" data-off="0">০</button><button type="button" data-off="0.05">পরে ৫০ মি.সে. ▶</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px" id="offInfo">দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।</small></div>
     <div class="grp"><span>বাংলা অর্থ</span><p style="margin:0;font-size:13px;line-height:1.6;color:var(--muted)">আরবি থেকে লাইন ধরে করা অনুবাদ, প্রকাশিত অনুবাদের সাথে মিলিয়ে দেখা। প্রকাশিত পূর্ণ অনুবাদ: <a id="mnSrc" target="_blank" rel="noopener" style="color:var(--accent)">মুসলিম বাংলা — মুনাজাতে মাকবুল, শুক্রবার</a></p></div>
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

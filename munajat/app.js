@@ -24,7 +24,9 @@
   const mediaKeys = async () => { try { const db = await idb(); return await new Promise((ok) => { const r = db.transaction('media').objectStore('media').getAllKeys(); r.onsuccess = () => ok(r.result || []); r.onerror = () => ok([]); }); } catch (e) { return []; } };
   const getMedia = async (k) => { const db = await idb(); return new Promise((ok) => { const r = db.transaction('media').objectStore('media').get(k); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); };
   /* ---------- সময় ---------- */
-  const LEAD = 0.12; // লাইনের শুরু যেন কেটে না যায়
+  const LEAD = 0.06; // লাইনের শুরু যেন কেটে না যায় (দোয়ার শুরুতে প্রায় শূন্য)
+  const OFF = () => (S.off && +S.off[DAYID]) || 0; // এই দিনের ফাইলের সময়-সরানো (ফোন/ফাইল ভেদে)
+  let endT = 0;
   const nd = (i) => S.nudge[i] || [0, 0];
   const duaSpan = (i) => { const d = duas[i], n = nd(i); return [d.s + n[0], d.e + n[1]]; };
   const lineSpan = (i, j) => { const d = duas[i], L = d.lines[j], n = nd(i); return [j === 0 ? L.s + n[0] : L.s, j === d.lines.length - 1 ? L.e + n[1] : L.e]; };
@@ -41,7 +43,7 @@
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
   const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
-  const startItem = () => { clearTimeout(timer); const it = plan && plan.items[plan.k]; if (!it) return finishDua(); wantPlay = true; media.playbackRate = S.speed; media.currentTime = Math.max(0, it.s - LEAD); const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); };
+  const startItem = () => { clearTimeout(timer); const it = plan && plan.items[plan.k]; if (!it) return finishDua(); wantPlay = true; media.playbackRate = S.speed; media.currentTime = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); meta(it); };
   let hifzWait = false; const hifzShow = (on) => { hifzWait = on; $('#hifz').hidden = !on; };
   const finishItem = () => { media.pause(); const cur = plan.items[plan.k]; if (cur && cur.wait) { wantPlay = false; hifzShow(true); const d = duas[cur.i]; $('#hifzMsg').textContent = 'এবার আপনি বলুন — লাইন ' + bn(cur.j + 1) + '/' + bn(d.lines.length); status('আপনার পালা'); renderBar(); return; } plan.k++; const it = plan.items[plan.k]; if (!it) return finishDua(); status('বিরতি'); timer = setTimeout(startItem, S.gap * 1000); };
   const nextInQueue = (i, dir) => { const q = queue(); let k = q.indexOf(i);
@@ -51,8 +53,13 @@
     if (S.after === 'next') { const n = nextInQueue(i, 1); if (n != null) { status(n <= i ? 'তালিকা আবার শুরু' : 'পরের দোয়া'); timer = setTimeout(() => playDua(n), S.gap * 1000); return; } }
     else if (S.after === 'loop') { timer = setTimeout(() => playDua(i), S.gap * 1000); return; }
     plan = null; status('শেষ'); render(); };
-  const tick = () => { const t = media.currentTime, it = plan && plan.items[plan.k]; if (it && wantPlay && !media.paused && t >= it.e) finishItem(); highlight(it && it.j != null ? null : t, it); if (!media.paused) requestAnimationFrame(tick); };
-  media.addEventListener('play', () => requestAnimationFrame(tick)); media.addEventListener('seeked', () => tick());
+  const check = () => { const it = plan && plan.items[plan.k]; if (it && wantPlay && !media.paused && media.currentTime >= it.e + OFF()) { finishItem(); return true; } return false; };
+  /* পর্দা বন্ধ / অ্যাপ পেছনে থাকলে requestAnimationFrame চলে না — তাই টাইমার + timeupdate দিয়েও দোয়ার শেষ ধরা হয় */
+  const sched = () => { clearTimeout(endT); const it = plan && plan.items[plan.k]; if (!it || media.paused || !wantPlay) return; const ms = (it.e + OFF() - media.currentTime) / (media.playbackRate || 1) * 1000; endT = setTimeout(() => { if (!check()) sched(); }, Math.max(15, Math.min(ms - 10, 5000))); };
+  const meta = (it) => { if (!('mediaSession' in navigator) || !it) return; try { navigator.mediaSession.metadata = new MediaMetadata({title: 'দোয়া ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''), artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল', artwork: [{src: 'icon.svg', sizes: '512x512', type: 'image/svg+xml'}]}); } catch (e) {} };
+  const tick = () => { const t = media.currentTime, it = plan && plan.items[plan.k]; if (check()) return; highlight(it && it.j != null ? null : t - OFF(), it); if (!media.paused && !document.hidden) requestAnimationFrame(tick); };
+  media.addEventListener('play', () => requestAnimationFrame(tick)); media.addEventListener('seeked', () => { tick(); sched(); }); media.addEventListener('playing', sched); media.addEventListener('timeupdate', () => { if (!check() && document.hidden) highlight(null, plan && plan.items[plan.k]); }); media.addEventListener('ratechange', sched);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !media.paused) requestAnimationFrame(tick); });
   const hifzGo = (again) => { if (!plan) return; hifzShow(false); if (!again) plan.k++; startItem(); };
   const stop = () => { hifzShow(false); clearTimeout(timer); wantPlay = false; media.pause(); plan = null; status(); render(); };
   const startList = () => { const q = queue(); playDua(q.includes(S.dua) ? S.dua : q[0]); };
@@ -98,6 +105,7 @@
     if (b.id === 'pickPlay') { if (!media.src) return; stop(); startList(); return; }
     if (ds.dua != null) { const i = +ds.dua; if (i !== S.dua) { stop(); S.dua = i; save(); render(); $('#d-' + i).scrollIntoView({block: 'start', behavior: 'smooth'}); } if (media.src) playDua(i); return; }
     if (ds.tg) { S[ds.tg] = !S[ds.tg]; save(); render(); return; }
+    if (ds.off != null) { if (!S.off) S.off = {}; const v = +ds.off; S.off[DAYID] = v === 0 ? 0 : Math.round(((+S.off[DAYID] || 0) + v) * 100) / 100; save(); offInfo(); if (plan) playDua(S.dua); return; }
     if (ds.set) { const [k, v] = ds.set.split(':'); S[k] = isNaN(+v) ? v : +v; save(); if (plan && (k === 'mode' || k === 'speed')) playDua(S.dua); else render(); return; }
     if (ds.step) { const [k, dv] = ds.step.split(':'), lim = {reps: [1, 33], gap: [0, 30], whole: [0, 11]}[k]; S[k] = Math.min(lim[1], Math.max(lim[0], S[k] + +dv)); save(); render(); return; }
     if (ds.nudge) { const [i, w, dv] = ds.nudge.split(':'), n = (S.nudge[i] = S.nudge[i] || [0, 0]); n[+w] = Math.round((n[+w] + +dv) * 100) / 100; save(); render(); const [s, e] = duaSpan(+i); if (media.src) media.currentTime = +w === 0 ? s : Math.max(s, e - 3); return; }
@@ -109,8 +117,8 @@
   $('#sheet').addEventListener('click', (ev) => { if (ev.target.id === 'sheet') $('#sheet').hidden = true; });
   document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode !== 'dua') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
   $('#file').addEventListener('change', async (ev) => { const f = ev.target.files[0]; if (!f) return; $('#fileMsg').textContent = 'রাখা হচ্ছে…'; try { await putMedia(DAYKEY, f); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); await loadMedia(); } catch (e) { $('#fileMsg').textContent = 'রাখা যায়নি: ' + e.message; } });
-  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ২৫'; };
-  if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', toggle); navigator.mediaSession.setActionHandler('pause', toggle); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
+  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ২৬'; };
+  if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', () => { if (media.paused) toggle(); }); navigator.mediaSession.setActionHandler('pause', () => { if (!media.paused) toggle(); }); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
   $('#dayTitle').textContent = day.title; $('#dayRange').textContent = day.range; const src = $('#mnSrc'); if (src && day.mnSrc) src.href = day.mnSrc;
   /* ---------- দিনের তালিকা ---------- */
@@ -153,6 +161,8 @@
     $('#qres').innerHTML = rows.length ? '<div class="qn">আপনার প্রিয় দোয়া — ' + bn(rows.length) + 'টি</div>' + rows.join('') : '<div class="qn">এখনো কোনো প্রিয় দোয়া নেই — দোয়ার পাশে ☆ চাপুন</div>'; }
   function goTo(id, i) { if (id === DAYID) { stop(); S.dua = i; save(); render(); const el = $('#d-' + i); if (el) el.scrollIntoView({block: 'start', behavior: 'smooth'}); return; }
     save(); S.perDay[id] = Object.assign({}, S.perDay[id] || {}, {dua: i}); try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('mm_day', id); sessionStorage.setItem('mm_go', '1'); } catch (e) {} location.reload(); }
+  function offInfo() { const v = OFF(), el = $('#offInfo'); if (el) el.textContent = (v ? 'এখন: ' + (v > 0 ? 'পরে ' : 'আগে ') + bn(Math.round(Math.abs(v) * 1000)) + ' মি.সে. · ' : '') + 'দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।'; }
+  offInfo();
   render(); loadMedia(); drawDays();
   try { if (sessionStorage.getItem('mm_go')) { sessionStorage.removeItem('mm_go'); const el = $('#d-' + S.dua); if (el) setTimeout(() => el.scrollIntoView({block: 'start'}), 50); } } catch (e) {}
   try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}
