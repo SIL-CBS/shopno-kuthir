@@ -88,6 +88,10 @@ main{padding:6px 12px 120px}
 #hifz{position:fixed;left:12px;right:12px;bottom:14px;z-index:30;background:var(--deep);color:#f6f4ee;border-radius:18px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
 #hifz p{margin:0 0 8px;font-size:15px;font-weight:700}#hifz div{display:flex;gap:10px}#hifz button{flex:1;min-height:48px;border-radius:14px;border:0;font:inherit;font-size:16px;font-weight:700}
 #hifzAgain{background:#f6f4ee;color:var(--deep)}#hifzNext{background:#e0b84c;color:#1b2a22}
+.ab{font-size:14px;line-height:1.6}.ab h3{font-size:15px;color:var(--accent);margin:14px 0 4px}.ab .vb{display:flex;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.ab .vb b{font-size:22px;color:var(--deep)}.ab table{width:100%;border-collapse:collapse;font-size:13px}.ab td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}.ab td:first-child{white-space:nowrap;color:var(--muted)}
+.ab details{border-top:1px solid var(--line);padding:6px 0}.ab summary{cursor:pointer;font-weight:700}.ab ul{margin:4px 0 0;padding-left:20px}.ab .mu{color:var(--muted);font-size:12px}
+#aboutBtn{color:inherit}
 </style>
 </head>
 <body>
@@ -95,7 +99,7 @@ main{padding:6px 12px 120px}
   <div class="wrap">
     <div class="row">
       <div class="tt"><b>মুনাজাতে মাকবূল · <span id="dayTitle"></span></b><span id="dayRange"></span></div>
-      <button class="ib" id="sheetBtn" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+      <button class="ib" id="aboutBtn" aria-label="অ্যাপ সম্পর্কে" style="font-size:20px;font-weight:700">ⓘ</button><button class="ib" id="sheetBtn" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
     </div>
     <div class="stage">
       <audio id="media" preload="auto"></audio>
@@ -139,6 +143,12 @@ main{padding:6px 12px 120px}
   <main id="list"></main>
 </div>
 <div id="hifz" hidden><p id="hifzMsg">এবার আপনি লাইনটা বলুন</p><div><button type="button" id="hifzAgain">↻ আবার শুনুন</button><button type="button" id="hifzNext">পরের লাইন ▶</button></div></div>
+<div class="sheet" id="about" hidden>
+  <div class="sp" role="dialog" aria-label="অ্যাপ সম্পর্কে">
+    <div class="row"><h2 style="flex:1">অ্যাপ সম্পর্কে</h2><button class="ib" id="aboutClose" aria-label="বন্ধ">✕</button></div>
+    <div id="aboutBody" class="ab"></div>
+  </div>
+</div>
 <div class="sheet" id="sheet" hidden>
   <div class="sp" role="dialog" aria-label="সেটিংস">
     <div class="row"><h2 style="flex:1">মুখস্থের সেটিং</h2><button class="ib" id="sheetClose" aria-label="বন্ধ">✕</button></div>
@@ -155,7 +165,7 @@ main{padding:6px 12px 120px}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="data.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>

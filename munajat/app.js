@@ -2,6 +2,19 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
+  const APPVER = 28, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const CHANGES = [
+    [28, '১৬ নভে ২০২৬', ['ⓘ "অ্যাপ সম্পর্কে" পাতা — সংস্করণ, কী নতুন, কোন দিনে কোন দোয়া']],
+    [27, '১৬ নভে ২০২৬', ['দোয়া শুরুর সময় আগের অডিওর টুকরো আর শোনা যায় না (চুপ থেকে শুরু, ঠিক মুহূর্তে আওয়াজ)', 'পর্দা বন্ধ থাকলে মাঝে না থেমে পরের অংশে চলে যায় — লক স্ক্রিনে বন্ধ হয় না']],
+    [26, '১৬ নভে ২০২৬', ['ভিডিও প্লেয়ারের বদলে অডিও প্লেয়ার — লক স্ক্রিন / পেছনে চলে', 'লক স্ক্রিনে দোয়ার নম্বর ও দিন দেখায়', 'সেটিংসে "অডিওর সময় মেলান" (প্রতিদিন আলাদা)', 'শনিবারের দোয়ার শুরু আরও নিখুঁত']],
+    [25, '১৬ নভে ২০২৬', ['৭ দিন জুড়ে খোঁজা — অর্থ, উচ্চারণ, আরবি বা দোয়া নং', '★ প্রিয় দোয়া ও প্রিয় তালিকা চালানো', 'মুখস্থ মোড — এক লাইন শুনে থামে, তারপর আপনি বলুন']],
+    [24, '১৬ নভে ২০২৬', ['শনি, রবি, বুধবারের কয়েকটা লাইনের সময় ঠিক করা']],
+    [23, '১৬ নভে ২০২৬', ['বৃহস্পতিবার যোগ — ৭ দিনই সম্পূর্ণ']],
+    [22, '১৬ নভে ২০২৬', ['মঙ্গলবার যোগ']],
+    [21, '১৫ নভে ২০২৬', ['সোমবার যোগ']],
+    [20, '১৫ নভে ২০২৬', ['শনিবার যোগ']],
+    [19, '১৫ নভে ২০২৬', ['রবিবার যোগ, YouTube লিংক ও কপি বোতাম, ফাইল বদলান বোতাম']],
+  ];
   const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', listLoop: true, speed: 1, showBn: true, showMeaning: false, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
@@ -122,12 +135,21 @@
     if (b.id === 'play') return toggle();
     if (b.id === 'prev') { const n = nextInQueue(S.dua, -1); return playDua(n == null ? S.dua : n); }
     if (b.id === 'next') { const n = nextInQueue(S.dua, 1); return n == null ? stop() : playDua(n); }
+    if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
+  $('#about').addEventListener('click', (ev) => { if (ev.target.id === 'about') $('#about').hidden = true; });
+  function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ</td></tr>'; }).join('');
+    $('#aboutBody').innerHTML = '<div class="vb"><div><div class="mu">অ্যাপ সংস্করণ</div><b>' + bn(APPVER) + '</b></div><div class="mu">হালনাগাদ: ' + APPDATE + '<br>মুনাজাতে মাকবূল · ৭ দিনের দোয়া</div></div>'
+      + '<h3>কী নতুন</h3>' + CHANGES.map((c, k) => '<details' + (k === 0 ? ' open' : '') + '><summary>সংস্করণ ' + bn(c[0]) + ' <span class="mu">· ' + c[1] + '</span></summary><ul>' + c[2].map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></details>').join('')
+      + '<h3>কোন দিনে কোন দোয়া</h3><table>' + rows + '</table>'
+      + '<h3>তথ্যসূত্র</h3><p>আরবি পাঠ: মাওলানা আশরাফ আলী থানভী (রহ.)-এর মুনাজাতে মাকবূল — YouTube ভিডিওর বইয়ের পাতা থেকে পড়া। বাংলা উচ্চারণ ও অর্থ নিজস্ব; বইয়ের সাথে মিলিয়ে নিন।</p>'
+      + '<h3>গোপনীয়তা</h3><p>অডিও ফাইল, প্রিয় তালিকা ও সেটিং শুধু এই ফোন/কম্পিউটারেই থাকে — কোথাও পাঠানো হয় না।</p>'
+      + '<p class="mu">নতুন সংস্করণ না দেখালে অ্যাপ বন্ধ করে আবার খুলুন।</p>'; }
   $('#sheet').addEventListener('click', (ev) => { if (ev.target.id === 'sheet') $('#sheet').hidden = true; });
   document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode !== 'dua') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
   $('#file').addEventListener('change', async (ev) => { const f = ev.target.files[0]; if (!f) return; $('#fileMsg').textContent = 'রাখা হচ্ছে…'; try { await putMedia(DAYKEY, f); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); await loadMedia(); } catch (e) { $('#fileMsg').textContent = 'রাখা যায়নি: ' + e.message; } });
-  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ২৭'; };
+  const loadMedia = async () => { let blob = null; try { blob = await getMedia(DAYKEY); } catch (e) {} if (!blob) { document.body.classList.add('nofile'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও এখনো দেওয়া হয়নি — নিচে "ফাইল বেছে নিন" চাপুন'; return; } document.body.classList.remove('nofile'); document.body.classList.toggle('audio-only', /^audio\//.test(blob.type) || /\.(m4a|mp3|aac|ogg|wav)$/i.test(blob.name || '')); media.src = URL.createObjectURL(blob); media.load(); media.addEventListener('loadedmetadata', () => { const want = day.dur, got = media.duration; const w = $('#durWarn'); if (w) w.remove(); if (want && got && Math.abs(got - want) > 3) { const p = document.createElement('p'); p.id = 'durWarn'; p.style.cssText = 'margin:6px 14px;padding:8px 12px;border-radius:10px;background:#b3261e;color:#fff;font-size:14px'; p.textContent = '⚠ এই ফাইলটা সম্ভবত ' + DMETA[1] + '-এর নয় (দৈর্ঘ্য ' + bn(Math.round(got)) + ' সে., হওয়ার কথা ' + bn(Math.round(want)) + ' সে.)। সেটিংস → "ফাইল বদলান" দিয়ে ' + DMETA[1] + '-এর অডিও দিন।'; $('#fileMsg').after(p); } }, {once: true}); if (day.placeholder) media.addEventListener('loadedmetadata', () => { const e = Math.max(1, media.duration - 0.1); duas[0].e = e; duas[0].lines[0].e = e; }, {once: true}); drawDays(); $('#fileMsg').textContent = DMETA[1] + '-এর ফাইল এই ডিভাইসে আছে · ' + bn((blob.size / 1048576).toFixed(1)) + ' MB · অ্যাপ সংস্করণ ' + bn(APPVER); };
   if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', () => { if (media.paused) toggle(); }); navigator.mediaSession.setActionHandler('pause', () => { if (!media.paused) toggle(); }); navigator.mediaSession.setActionHandler('nexttrack', () => $('#next').click()); navigator.mediaSession.setActionHandler('previoustrack', () => $('#prev').click()); } catch (e) {} }
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
   $('#dayTitle').textContent = day.title; $('#dayRange').textContent = day.range; const src = $('#mnSrc'); if (src && day.mnSrc) src.href = day.mnSrc;
