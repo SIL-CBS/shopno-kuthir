@@ -1,0 +1,30 @@
+name: Munajat v2 — Android APK
+on:
+  push:
+    branches: [main]
+    paths: ['munajat-v2/**', '.github/workflows/munajat-v2-apk.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: munajat-v2 } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+      - run: npx cap sync android
+      - run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug --no-daemon
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk munajat-v2-debug.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: munajat-v2-latest
+          name: Munajat v2 (test build)
+          prerelease: true
+          make_latest: false
+          files: munajat-v2/munajat-v2-debug.apk
+          body: "পরীক্ষামূলক Android অ্যাপ (debug build) — ফোনে বসিয়ে দেখার জন্য।"

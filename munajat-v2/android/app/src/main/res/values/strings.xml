@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">মুনাজাতে মাকবূল</string>
+    <string name="title_activity_main">মুনাজাতে মাকবূল</string>
+    <string name="package_name">bd.sohel.munajat</string>
+    <string name="custom_url_scheme">bd.sohel.munajat</string>
+</resources>

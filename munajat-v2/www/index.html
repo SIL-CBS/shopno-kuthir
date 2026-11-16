@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f3d33">
+<title>মুনাজাতে মাকবূল</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap">
+<style>
+:root{--ink:#1c2a26;--muted:#5d6b66;--bg:#f6f4ee;--card:#fff;--line:#e4e0d4;--deep:#0f3d33;--accent:#0f5c4a;--gold:#d9c98f;--hl:#fbf4dc;--ar:30px}
+@media (prefers-color-scheme:dark){:root{--ink:#e7ece9;--muted:#9fb0a9;--bg:#101614;--card:#18211e;--line:#2a3833;--deep:#0b2a23;--accent:#6fc2a8;--gold:#d9c98f;--hl:#2e2a17}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Hind Siliguri',system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.top{position:sticky;top:0;z-index:5;background:var(--deep);color:#f6f4ee;padding:max(10px,env(safe-area-inset-top)) 14px 10px}
+.row{display:flex;align-items:center;gap:10px}
+.tt{flex:1;min-width:0}.tt b{display:block;font-size:17px}.tt span{font-size:12px;color:#cfdcd6}
+.ib{width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center}.ib svg{width:24px;height:24px}
+.wrap{max-width:1100px;margin:0 auto}
+.stage{display:grid;grid-template-columns:1fr;gap:10px;padding:10px 0 0}
+video{width:100%;max-height:34vh;background:#000;border-radius:12px;display:block}
+.no-video video,.audio-only video{display:none}
+.no-video .stage,.audio-only .stage{grid-template-columns:1fr!important;max-width:420px;margin:0 auto;padding-top:4px}
+.ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 2px}
+#play{width:60px;height:60px;border-radius:50%;border:0;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center}#play svg{width:28px;height:28px}
+#status{font-size:13px;color:#cfdcd6;min-height:20px;text-align:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px 4px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:14px;min-height:40px}
+.chip[aria-pressed=true]{background:var(--deep);border-color:var(--deep);color:#f6f4ee}
+.mode{margin-left:auto}
+main{padding:6px 12px 120px}
+.dua{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:8px 0;overflow:hidden}
+.dua.open{border-color:var(--gold)}
+.dhw{display:flex;align-items:stretch}
+.pick{flex:none;width:52px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;padding:0 0 0 6px}
+.box{width:26px;height:26px;border-radius:8px;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.sel .box{background:var(--accent);border-color:var(--accent)}
+.dua.sel{box-shadow:inset 4px 0 0 var(--accent)}
+.picker{margin:8px 12px 0;padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.picker b{font-size:15px;color:var(--accent)}#pickInfo{display:block;font-size:13px;color:var(--muted);margin:2px 0 8px}
+.pk{display:flex;gap:8px;flex-wrap:wrap}.pk button{min-height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 14px}
+.pk button[aria-pressed=true]{background:var(--deep);color:#f6f4ee;border-color:var(--deep)}.pk button:disabled{opacity:.45}
+#pickPlay{background:var(--deep);color:#f6f4ee;border-color:var(--deep);margin-left:auto}
+.src{font-size:12px;color:var(--muted);padding:4px 14px}.src a{color:var(--accent)}
+.dh{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;background:transparent;text-align:right;min-height:52px}
+.no{font-weight:700;color:var(--accent);min-width:58px;text-align:left;font-size:15px}
+.first{flex:1;font-family:Amiri,serif;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dur{font-size:12px;color:var(--muted)}
+.open .first{display:none}
+.lines{padding:0 12px 12px}
+.ln{padding:10px 12px;border-radius:12px;margin:4px 0;cursor:pointer}
+.ln.on{background:var(--hl)}
+.ln{position:relative}.lrep{float:left;margin:0 8px 4px 0;min-width:44px;min-height:32px;border-radius:10px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:700}.lrep.set{border:1px solid var(--accent);background:var(--accent);color:#fff}
+body:not(.m-line) .lrep{display:none}
+.ar{font-family:Amiri,'Noto Naskh Arabic',serif;font-size:var(--ar);line-height:1.9;text-align:right;color:var(--deep)}
+@media (prefers-color-scheme:dark){.ar{color:#f1e9c8}.mn{color:#fff!important}}
+.bn{font-size:17px;line-height:1.6;margin-top:2px}
+.mn{display:none;font-size:16px;font-weight:800;color:#000;background:color-mix(in srgb,var(--line) 45%,transparent);border-radius:10px;padding:8px 10px;margin-top:6px}
+.no-bn .bn{display:none}.show-mn .mn{display:block}
+.arnote{display:none;width:100%;margin:6px 0;padding:8px 12px;border:0;border-radius:10px;background:#b3261e;color:#fff;font:inherit;font-size:14px;text-align:center}.hide-ar .arnote{display:block}
+.hide-ar .ar{filter:blur(9px);transition:filter .2s}.hide-ar .ln:hover .ar,.hide-ar .ln:focus-within .ar{filter:none}
+.nudge{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px;color:var(--muted);padding:8px 4px 0;border-top:1px dashed var(--line);margin-top:6px}
+.nudge button{border:1px solid var(--line);background:var(--bg);border-radius:10px;min-height:36px;padding:0 10px}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sp{background:var(--bg);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:16px 18px max(22px,env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.sp h2{margin:0 0 6px;font-size:19px;color:var(--accent)}
+.sp>.row:first-child{position:sticky;top:-16px;z-index:5;background:linear-gradient(135deg,#1e4e8c,#2f7fc4);margin:-16px -18px 10px;padding:12px 18px;border-radius:20px 20px 0 0;box-shadow:0 2px 10px rgba(20,50,90,.25)}
+.sp>.row:first-child h2{color:#fff;margin:0}
+.sp>.row:first-child .ib{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:12px;width:44px;height:44px;font-size:20px}
+.grp{margin:14px 0}.grp>span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.seg button,.st button{min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.seg button[aria-pressed=true]{background:var(--deep);color:#f6f4ee;border-color:var(--deep)}
+.st{display:flex;align-items:center;justify-content:space-between;gap:10px}.st div{display:flex;align-items:center;gap:6px}.st button{width:44px}.st output{min-width:60px;text-align:center;font-weight:700;color:var(--accent);font-size:17px}
+.st small{display:block;color:var(--muted);font-size:12px}
+.file{margin:12px;padding:16px;border-radius:16px;background:var(--card);border:1px dashed var(--gold);display:none}
+.nofile .file{display:block}
+.yt{margin:6px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:6px 12px}.yt summary{cursor:pointer;font-weight:600;color:var(--accent);padding:4px 0}.ytr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}.ytr b{font-size:15px}.ytr small{display:block;color:var(--muted);font-size:12px}.ytr a,.ytr button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;text-decoration:none;white-space:nowrap}.ytn{font-size:12px;color:var(--muted);margin:6px 0}
+.days{display:flex;gap:8px;overflow-x:auto;padding:10px 14px 4px;scrollbar-width:thin}.dy{flex:0 0 auto;display:grid;gap:1px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;min-width:112px}.dy b{font-size:15px}.dy small{font-size:12px;color:var(--muted)}.dy i{font-style:normal;font-size:12px}.dy i.ok{color:#1d6b3a}.dy i.no{color:var(--accent)}.dy i.tx{color:var(--muted)}.dy.cur{border-color:var(--deep);box-shadow:inset 0 0 0 2px var(--deep)}.file p{margin:0 0 10px;font-size:15px;line-height:1.6}
+.big{min-height:48px;border-radius:12px;border:0;background:var(--deep);color:#f6f4ee;padding:0 18px;font-size:16px}
+#fileMsg{font-size:12px;color:var(--muted);padding:2px 14px}
+@media (min-width:900px){.stage{grid-template-columns:minmax(0,1fr) 300px;align-items:end}video{max-height:42vh}}
+.srch{margin:8px 12px 0;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.sq{display:flex;gap:8px}.sq input{flex:1;min-width:0;min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:inherit;font:inherit;font-size:15px;padding:0 12px}
+#favBtn{flex:none;min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:#b8860b;padding:0 12px;font-weight:700}#favBtn[aria-pressed=true]{background:var(--deep);color:#ffd54a;border-color:var(--deep)}
+#qres:empty{display:none}#qres{margin-top:8px;max-height:55vh;overflow:auto}
+.qr{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;padding:9px 4px;font:inherit}
+.qr b{color:var(--accent);font-size:14px}.qr small{color:var(--muted);font-size:12px;margin-left:6px}.qr span{display:block;font-size:14px;margin-top:2px;line-height:1.5}.qr mark{background:#ffe08a;color:#000;border-radius:3px}
+.qn{font-size:13px;color:var(--muted);padding:6px 4px}
+.star{flex:none;width:46px;border:0;background:transparent;font-size:22px;color:var(--muted)}.star.on{color:#e0a800}
+#hifz{position:fixed;left:12px;right:12px;bottom:14px;z-index:30;background:var(--deep);color:#f6f4ee;border-radius:18px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+#hifz p{margin:0 0 8px;font-size:15px;font-weight:700}#hifz div{display:flex;gap:10px}#hifz button{flex:1;min-height:48px;border-radius:14px;border:0;font:inherit;font-size:16px;font-weight:700}
+#hifzAgain{background:#f6f4ee;color:var(--deep)}#hifzNext{background:#e0b84c;color:#1b2a22}
+.ab{font-size:14px;line-height:1.6}.ab h3{font-size:15px;color:var(--accent);margin:14px 0 4px}.ab .vb{display:flex;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.ab .vb b{font-size:22px;color:var(--accent)}.ab table{width:100%;border-collapse:collapse;font-size:13px}.ab td{border-top:1px solid var(--line);padding:5px 4px;vertical-align:top}.ab td:first-child{white-space:nowrap;color:var(--muted)}
+.ab details{border-top:1px solid var(--line);padding:6px 0}.ab summary{cursor:pointer;font-weight:700}.ab ul{margin:4px 0 0;padding-left:20px}.ab .mu{color:var(--muted);font-size:12px}
+#aboutBtn{color:inherit}
+.rh{flex:none;align-self:center;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);text-decoration:none;margin-right:2px}a.rh{color:var(--accent);border-color:var(--accent)}
+.ref{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 4px 8px;font-size:13px;color:var(--muted)}.ref .rt{font-weight:700;color:var(--accent)}.ref a,.ref span.rl{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:inherit;text-decoration:none}.ref a{color:var(--accent);border-color:var(--accent)}.ref .off{font-size:11px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="row">
+      <div class="tt"><b>মুনাজাতে মাকবূল · <span id="dayTitle"></span></b><span id="dayRange"></span></div>
+      <button class="ib" id="aboutBtn" aria-label="অ্যাপ সম্পর্কে" style="font-size:20px;font-weight:700">ⓘ</button><button class="ib" id="sheetBtn" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
+    <div class="stage">
+      <audio id="media" preload="auto"></audio>
+      <div>
+        <div class="ctl">
+          <button class="ib" id="prev" aria-label="আগের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button>
+          <button id="play" aria-label="চালান"></button>
+          <button class="ib" id="next" aria-label="পরের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></button>
+        </div>
+        <div id="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="chips">
+    <button class="chip" data-tg="showBn">উচ্চারণ</button>
+    <button class="chip" data-tg="showMeaning">অর্থ</button>
+    <button class="chip" data-tg="hideAr">আরবি ঢাকো</button>
+    <button class="chip mode" data-set="mode:dua">পুরো দোয়া</button>
+    <button class="chip" data-set="mode:line">লাইন ধরে</button>
+    <button class="chip" data-set="mode:hifz">মুখস্থ</button>
+  </div>
+  <button type="button" class="arnote" data-tg="hideAr">আরবি ঢাকা আছে (মুখস্থ যাচাইয়ের জন্য) — দেখাতে এখানে চাপুন</button>
+  <section class="days" id="days" aria-label="দিন বাছাই"></section>
+  <details class="yt" id="yt"><summary>YouTube লিংক — সব দিনের ভিডিও</summary><div id="ytList"></div><p class="ytn">ফাইল ফোনে নামাতে YouTube-এর লিংক লাগলে এখান থেকে কপি করুন। দোয়ার নম্বর শুধু যে দিনের লেখা অ্যাপে আছে, সেগুলোর দেখানো হয়েছে।</p></details>
+  <div id="fileMsg"></div>
+  <section class="file">
+    <p>এই দিনের অডিও ফাইলটা (যেমন Munajat_Friday_audio.m4a; ভিডিওও চলে) এই ফোনে রাখুন। একবার রাখলে এরপর ইন্টারনেট ছাড়াই চলবে; ফাইল শুধু এই ডিভাইসেই থাকে।</p>
+    <button class="big" id="addFile">ফাইল বেছে নিন</button>
+    <input type="file" id="file" accept="audio/*,video/*,.m4a,.mp3,.mp4,.aac,.wav,.ogg,.webm" hidden>
+  </section>
+  <section class="srch" aria-label="খোঁজা ও প্রিয়">
+    <div class="sq"><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="খুঁজুন — অর্থ, উচ্চারণ বা দোয়া নং (৭ দিনেই)"><button type="button" id="favBtn" aria-pressed="false">★ প্রিয়</button></div>
+    <div id="qres"></div>
+  </section>
+  <section class="picker" aria-label="শোনার তালিকা">
+    <b>শোনার তালিকা</b><span id="pickInfo"></span>
+    <div class="pk"><button id="pickAll">সব বাছাই</button><button id="pickNone">বাছাই মুছুন</button><button id="pickFav">★ প্রিয়গুলো</button><button id="pickPlay">▶ তালিকা চালাও</button></div>
+  </section>
+  <main id="list"></main>
+</div>
+<div id="hifz" hidden><p id="hifzMsg">এবার আপনি লাইনটা বলুন</p><div><button type="button" id="hifzAgain">↻ আবার শুনুন</button><button type="button" id="hifzNext">পরের লাইন ▶</button></div></div>
+<div class="sheet" id="about" hidden>
+  <div class="sp" role="dialog" aria-label="অ্যাপ সম্পর্কে">
+    <div class="row"><h2 style="flex:1">অ্যাপ সম্পর্কে</h2><button class="ib" id="aboutClose" aria-label="বন্ধ">✕</button></div>
+    <div id="aboutBody" class="ab"></div>
+  </div>
+</div>
+<div class="sheet" id="sheet" hidden>
+  <div class="sp" role="dialog" aria-label="সেটিংস">
+    <div class="row"><h2 style="flex:1">মুখস্থের সেটিং</h2><button class="ib" id="sheetClose" aria-label="বন্ধ">✕</button></div>
+    <div class="grp st"><div><span>প্রতিটি অংশ কতবার<small>পুরো দোয়া বা প্রতিটি লাইন</small></span></div><div><button data-step="reps:-1" aria-label="কমান">−</button><output id="reps"></output><button data-step="reps:1" aria-label="বাড়ান">+</button></div></div>
+    <div class="grp st"><div><span>প্রতিবারের মাঝে বিরতি<small>নিজে মুখে বলার সময়</small></span></div><div><button data-step="gap:-1" aria-label="কমান">−</button><output id="gap"></output><button data-step="gap:1" aria-label="বাড়ান">+</button></div></div>
+    <div class="grp st" id="wholeRow"><div><span>শেষে পুরো দোয়া একসাথে<small>লাইনগুলো জোড়া দিতে</small></span></div><div><button data-step="whole:-1" aria-label="কমান">−</button><output id="whole"></output><button data-step="whole:1" aria-label="বাড়ান">+</button></div></div>
+    <div class="grp"><span>দোয়া শেষ হলে</span><div class="seg"><button data-set="after:next">তালিকার পরেরটা</button><button data-set="after:loop">এটাই আবার</button><button data-set="after:stop">থামো</button></div></div>
+    <div class="grp"><span>তালিকার শেষ দোয়ার পর</span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-tg="listLoop">আবার প্রথম থেকে</button></div><small style="color:var(--muted);font-size:12px">বন্ধ থাকলে তালিকা একবার শেষ হয়ে থামবে</small></div>
+    <div class="grp"><span>বাংলা অর্থ শোনাও <small style="color:#b3261e">(পরীক্ষামূলক: শুধু শনিবার দোয়া ১–২)</small></span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-set="tts:off">বন্ধ</button><button data-set="tts:line">প্রতি লাইনের পরে</button><button data-set="tts:dua">পুরো দোয়ার পরে</button><button data-set="tts:only">শুধু অর্থ</button></div>
+      <div class="seg" style="margin-top:6px"><button data-set="ttsRate:0.8">ধীরে</button><button data-set="ttsRate:1">স্বাভাবিক</button><button data-set="ttsRate:1.2">দ্রুত</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px">ফোনের বাংলা কণ্ঠ দিয়ে পড়ে। না শোনালে: ফোনের Settings → Google Text-to-Speech → বাংলা (বাংলাদেশ) কণ্ঠ নামান।</small></div>
+    <div class="grp"><span>দোয়ার উৎস (কুরআন/হাদিস)</span><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-tg="refLinks">উৎসের লিংক খুলবে</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px">চালু করলে উৎসে চাপলে quran.com / sunnah.com খুলবে। বন্ধ থাকলে বা নেট না থাকলে শুধু লেখা দেখাবে।</small></div>
+    <div class="grp"><span>গতি</span><div class="seg"><button data-set="speed:0.75">০.৭৫×</button><button data-set="speed:1">১×</button><button data-set="speed:1.25">১.২৫×</button></div></div>
+    <div class="grp"><span>আরবির আকার</span><div class="seg"><button data-set="font:24">ছোট</button><button data-set="font:30">মাঝারি</button><button data-set="font:38">বড়</button></div></div>
+    <div class="grp"><span>অডিও / ভিডিও ফাইল</span><div class="seg" style="grid-template-columns:1fr"><button id="addFile2">ফাইল বদলান — নতুন অডিও দিন</button></div><small style="display:block;margin-top:6px;color:var(--muted)">নতুন ফাইল পুরনোটার জায়গা নেবে; পুরনোটা নিজে মুছে যাবে।</small></div>
+    <div class="grp"><span>অডিওর সময় মেলান (এই দিন)</span><div class="seg"><button type="button" data-off="-0.5">◀ আগে ৫০০ মি.সে.</button><button type="button" data-off="0">০</button><button type="button" data-off="0.5">পরে ৫০০ মি.সে. ▶</button></div><small style="display:block;color:var(--muted);font-size:12px;margin-top:4px" id="offInfo">দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।</small></div>
+    <div class="grp"><span>বাংলা অর্থ</span><p style="margin:0;font-size:13px;line-height:1.6;color:var(--muted)">আরবি থেকে লাইন ধরে করা অনুবাদ, প্রকাশিত অনুবাদের সাথে মিলিয়ে দেখা। প্রকাশিত পূর্ণ অনুবাদ: <a id="mnSrc" target="_blank" rel="noopener" style="color:var(--accent)">মুসলিম বাংলা — মুনাজাতে মাকবুল, শুক্রবার</a></p></div>
+    <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
+  </div>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
