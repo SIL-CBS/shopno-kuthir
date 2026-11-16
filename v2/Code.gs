@@ -4,7 +4,7 @@
  * ভূমিকা: admin (সব পারে), manager (এন্ট্রি দেয়, অনুমোদন লাগে), viewer (শুধু দেখে)।
  */
 var COLS = ['id','t','date','month','amt','desc','head','sl','page','member','src','chq','by','at','status','img','warn'];
-var INCOLS = ['id','name','fileId','at','by','status','note'];
+var INCOLS = ['id','name','fileId','at','by','status','note','label','view'];
 var EDIT = ['t','date','month','amt','desc','head','sl','page','member','src','chq'];
 var SHEET = 'Entries';
 
@@ -64,8 +64,18 @@ function doPost(e) {
       if (!b.data || String(b.data).length > 9000000) return out_({ok: false, error: 'too_big'});
       var id = Utilities.getUuid().slice(0, 8), nm = String(b.name || 'photo.jpg').replace(/[^\w.\-]/g, '_');
       var file = inf.createFile(Utilities.newBlob(Utilities.base64Decode(b.data), b.mime || 'image/jpeg', id + '__' + nm));
-      inSheet_().appendRow([id, nm, file.getId(), new Date().toISOString(), r, 'waiting', '']);
+      inSheet_().appendRow([id, nm, file.getId(), new Date().toISOString(), r, 'waiting', '', String(b.label || '').slice(0, 200)]);
       return out_({ok: true, id: id});
+    }
+    if (b.action === 'inbox_view') {
+      var vh = inRows_().filter(function (x) { return String(x.id) === String(b.id); })[0];
+      if (!vh) return out_({ok: false, error: 'not_found'});
+      inSheet_().getRange(vh._row, 9).setValue(String(b.view || '').slice(0, 30)); return out_({ok: true});
+    }
+    if (b.action === 'getimg') {
+      var gi = inRows_().filter(function (x) { return String(x.id) === String(b.id); })[0];
+      if (!gi) return out_({ok: false, error: 'not_found'});
+      try { var gf = DriveApp.getFileById(gi.fileId).getBlob(); return out_({ok: true, mime: gf.getContentType(), data: Utilities.base64Encode(gf.getBytes())}); } catch (x) { return out_({ok: false, error: 'no_file'}); }
     }
     if (b.action === 'inbox_del') {
       var ih = inRows_().filter(function (x) { return String(x.id) === String(b.id); })[0];
@@ -92,7 +102,9 @@ function doPost(e) {
 /* ---------- ছবি Inbox (ছবি → Claude পড়ে → Results ফোল্ডারে JSON → ingest → Entries-এ pending) ---------- */
 function inSheet_() {
   var ss = SpreadsheetApp.getActive(), sh = ss.getSheetByName('Inbox');
-  if (!sh) { sh = ss.insertSheet('Inbox'); sh.appendRow(INCOLS); sh.getRange('A:G').setNumberFormat('@'); }
+  if (!sh) { sh = ss.insertSheet('Inbox'); sh.appendRow(INCOLS); sh.getRange('A:I').setNumberFormat('@'); }
+  if (sh.getRange(1, 8).getValue() !== 'label') { sh.getRange(1, 8).setValue('label'); sh.getRange('H:H').setNumberFormat('@'); }
+  if (sh.getRange(1, 9).getValue() !== 'view') { sh.getRange(1, 9).setValue('view'); sh.getRange('I:I').setNumberFormat('@'); }
   return sh;
 }
 function ensureCols_() {
