@@ -50,7 +50,7 @@ function doPost(e) {
   try {
     if (b.action === 'add') {
       var o = b.row || {}; o.id = Utilities.getUuid().slice(0, 8); o.at = new Date().toISOString(); o.by = r;
-      o.status = r === 'admin' ? 'approved' : 'pending';
+      o.status = (r === 'admin' && !b.pending) ? 'approved' : 'pending';
       sheet_().appendRow(COLS.map(function (c) { return o[c] === undefined ? '' : o[c]; }));
       return out_({ok: true, row: o});
     }
