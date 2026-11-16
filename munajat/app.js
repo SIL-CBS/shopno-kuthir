@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 34, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 35, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [35, '১৬ নভে ২০২৬', ['বাজানো চলার সময় লাইনের ×বার বদলালেও সাথে সাথে কাজ করে']],
     [34, '১৬ নভে ২০২৬', ['প্রতিটি লাইনের পাশে ×৩ বোতাম — চাপলে ওই লাইন কতবার বাজবে বদলায় (১,২,৩,৪,৫,৭,১০; আবার চাপলে সেটিংসের মান)', '"লাইন ধরে" মোডে কাজ করে']],
     [33, '১৬ নভে ২০২৬', ['২–৩ সেকেন্ড পর আওয়াজ থেমে আবার চলা ঠিক করা (চুপ করে শুরুর কৌশল বাদ)']],
     [32, '১৬ নভে ২০২৬', ['শনিবার: ২২টি দোয়ার শুরু ক্বারী সাহেবের শ্বাস নেওয়ার বিরতিতে সরানো (দোয়া ২-সহ) — আগের দোয়ার শেষ অংশ আর আসবে না']],
@@ -65,6 +66,8 @@
   const LSTEPS = [0, 1, 2, 3, 4, 5, 7, 10];
   const lreps = (i, j) => { const v = S.lrep && S.lrep[i + ':' + j]; return v ? v : S.reps; };
   const lrepBtn = (i, j) => { const v = S.lrep && S.lrep[i + ':' + j]; return '<button type="button" class="lrep' + (v ? ' set' : '') + '" data-lrep="' + i + ':' + j + '" aria-label="এই লাইন কতবার">×' + bn(v || S.reps) + '</button>'; };
+  /* বাজানো চলার মাঝে কোনো লাইনের "কতবার" বদলালে বাকি পরিকল্পনা নতুন করে — এখনকার লাইন থেকেই চলবে */
+  const replan = (i) => { if (!plan || !plan.items.length || plan.items[0].i !== i) return; const cur = plan.items[plan.k]; const items = buildPlan(i); let k = cur ? items.findIndex((x) => x.j === cur.j && x.whole === cur.whole && x.rep === Math.min(cur.rep, x.of)) : -1; if (k < 0 && cur) k = items.findIndex((x) => x.j === cur.j); plan = {items, k: Math.max(0, k)}; status(); };
   const buildPlan = (i) => { const out = [], d = duas[i];
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
@@ -151,7 +154,7 @@
     if (b.id === 'play') return toggle();
     if (b.id === 'prev') { const n = nextInQueue(S.dua, -1); return playDua(n == null ? S.dua : n); }
     if (b.id === 'next') { const n = nextInQueue(S.dua, 1); return n == null ? stop() : playDua(n); }
-    if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
+    if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); replan(+k.split(':')[0]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
     if (b.id === 'logCopy') { const t = logText(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'কপি হয়েছে ✓'; }).catch(() => { const r = document.createRange(); r.selectNodeContents($('#logBox')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই করা হলো — কপি করুন'; }); return; }
     if (b.id === 'logClear') { LOG.length = 0; try { localStorage.removeItem(LOGK); } catch (e) {} $('#logBox').textContent = ''; return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
