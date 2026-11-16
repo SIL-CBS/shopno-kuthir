@@ -4,5 +4,14 @@
   "webDir": "www",
   "android": {
     "allowMixedContent": false
+  },
+  "server": {
+    "url": "https://sil-cbs.github.io/shopno-kuthir/v2/",
+    "cleartext": false,
+    "allowNavigation": [
+      "sil-cbs.github.io",
+      "script.google.com",
+      "script.googleusercontent.com"
+    ]
   }
 }
