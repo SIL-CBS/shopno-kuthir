@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 42, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 43, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [43, '১৭ নভে ২০২৬', ['বাংলা অর্থ এখন শুরু থেকেই দেখায় (আগে "অর্থ" চিপ চাপতে হতো)']],
     [42, '১৬ নভে ২০২৬', ['পরীক্ষামূলক: বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — শুধু শনিবার দোয়া ১ ও ২', 'সেটিংসে: বন্ধ / প্রতি লাইনের পরে / পুরো দোয়ার পরে / শুধু অর্থ, আর কণ্ঠের গতি']],
     [41, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম নীল রঙে']],
     [40, '১৬ নভে ২০২৬', ['ⓘ পাতায় উৎসের হিসাব — কয়টা পাওয়া গেছে, কয়টা যায়নি, আর বাকি দোয়ার নম্বর']],
@@ -29,10 +30,10 @@
     [20, '১৫ নভে ২০২৬', ['শনিবার যোগ']],
     [19, '১৫ নভে ২০২৬', ['রবিবার যোগ, YouTube লিংক ও কপি বোতাম, ফাইল বদলান বোতাম']],
   ];
-  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: false, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
+  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: true, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
-  if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
+  if (!S.mnOn1) { S.showMeaning = true; S.mnOn1 = 1; } /* একবার: বাংলা অর্থ চালু করে দাও */ if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
   /* ---------- দিন: ৭ দিনের তালিকা; যে দিনের লেখা এখনো নেই, সেটা পুরো ফাইল এক টানা বাজে ---------- */
   const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল']];
   let DAYID = 'friday'; try { DAYID = localStorage.getItem('mm_day') || 'friday'; } catch (e) {}
