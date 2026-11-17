@@ -48,6 +48,7 @@ function doGet(e) {
 
 function doPost(e) {
   var b = {}; try { b = JSON.parse(e.postData.contents); } catch (x) { return out_({ok: false, error: 'bad_json'}); }
+  if (b.action === 'login' || b.action === 'chpw') return out_(userAuth_(b));
   var r = role_(b.key);
   if (!r || r === 'viewer') return out_({ok: false, error: 'not_allowed'});
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
@@ -59,6 +60,7 @@ function doPost(e) {
       return out_({ok: true, row: o});
     }
     if (r !== 'admin') return out_({ok: false, error: 'admin_only'});
+    if (/^(users_list|user_save|user_del|users_import|vk_set)$/.test(b.action)) return out_(userAdmin_(b));
     if (b.action === 'upload') {
       var inf = folder_('Inbox'); if (!inf) return out_({ok: false, error: 'run_setup2'});
       if (!b.data || String(b.data).length > 9000000) return out_({ok: false, error: 'too_big'});
@@ -157,4 +159,81 @@ function ingest() {
       pf.addFile(f); rf.removeFile(f);
     }
   } finally { lock.releaseLock(); }
+}
+
+
+/* ---------- ইউজার ও পাসওয়ার্ড (Users ট্যাব) ----------
+ * লগইন: User ID (মোবাইলের শেষ ৬ অঙ্ক) + ব্যক্তিগত পাসওয়ার্ড। লগইন ঠিক হলে অ্যাপ খোলার চাবি (vk) ও পেজ-তালিকা ফেরত যায়।
+ * পাসওয়ার্ড অ্যাডমিন দেখতে পারেন বলে Users ট্যাবে সরাসরি রাখা হয়: এই শিট কারো সাথে শেয়ার করবেন না।
+ */
+var UCOLS = ['uid', 'name', 'mobile', 'group', 'pw', 'pages', 'active', 'updated'];
+var GROUPS = {admin: {n: 'অ্যাডমিন', r: 'admin', v: 0}, manager: {n: 'ম্যানেজার', r: 'manager', v: 1}, service: {n: 'সার্ভিস চার্জ', r: 'viewer', v: 2}, share: {n: 'শেয়ারহোল্ডার', r: 'viewer', v: 2}};
+var VNAMES = ['admin', 'manager', 'viewer'];
+function uSheet_() {
+  var ss = SpreadsheetApp.getActive(), sh = ss.getSheetByName('Users');
+  if (!sh) { sh = ss.insertSheet('Users'); sh.getRange('A:H').setNumberFormat('@'); sh.appendRow(UCOLS); }
+  return sh;
+}
+function uRows_() {
+  var v = uSheet_().getDataRange().getValues(), res = [];
+  for (var i = 1; i < v.length; i++) { if (v[i][0] === '' && v[i][1] === '') continue; var o = {}; UCOLS.forEach(function (c, j) { o[c] = String(v[i][j] === undefined ? '' : v[i][j]); }); o._row = i + 1; res.push(o); }
+  return res;
+}
+function digits6_(x) { return String(x || '').replace(/\D/g, '').slice(-6); }
+function pub_(o) { return {uid: o.uid, name: o.name, mobile: o.mobile, group: o.group, pw: o.pw, pages: o.pages || '*', active: o.active === 'no' ? 'no' : 'yes', updated: o.updated}; }
+function userAuth_(b) {
+  var rows = uRows_(); if (!rows.length) return {ok: false, error: 'not_ready'};
+  var uid = digits6_(b.uid), u = rows.filter(function (o) { return o.uid === uid; })[0];
+  if (!u || u.active === 'no' || String(b.pw) !== u.pw || !GROUPS[u.group]) { Utilities.sleep(800); return {ok: false, error: 'bad'}; }
+  if (b.action === 'chpw') {
+    var np = String(b.npw || ''); if (np.length < 4 || np.length > 40) return {ok: false, error: 'short'};
+    var lock = LockService.getScriptLock(); lock.waitLock(20000);
+    try { uSheet_().getRange(u._row, 5).setValue(np); uSheet_().getRange(u._row, 8).setValue(new Date().toISOString()); } finally { lock.releaseLock(); }
+    return {ok: true};
+  }
+  var vk = {}; try { vk = JSON.parse(PropertiesService.getScriptProperties().getProperty('VK') || '{}'); } catch (x) {}
+  var g = GROUPS[u.group], key = vk[VNAMES[g.v]];
+  if (!key) return {ok: false, error: 'not_ready'};
+  try { var ls = SpreadsheetApp.getActive(), lg = ls.getSheetByName('Log') || ls.insertSheet('Log'); if (lg.getLastRow() === 0) lg.appendRow(['time', 'uid', 'name', 'group', 'device']); lg.appendRow([Utilities.formatDate(new Date(), 'Asia/Dhaka', 'yyyy-MM-dd HH:mm:ss'), u.uid, u.name, g.n, String(b.dev || '')]); } catch (x) {}
+  return {ok: true, user: {uid: u.uid, name: u.name, group: g.n, role: g.r, pages: u.pages || '*'}, v: g.v, vk: key};
+}
+function userAdmin_(b) {
+  var sh = uSheet_(), rows = uRows_(), now = new Date().toISOString();
+  function admins_(skip) { return rows.filter(function (o) { return o.group === 'admin' && o.active !== 'no' && o.uid !== skip; }).length; }
+  if (b.action === 'users_list') {
+    var vk = {}; try { vk = JSON.parse(PropertiesService.getScriptProperties().getProperty('VK') || '{}'); } catch (x) {}
+    return {ok: true, users: rows.map(pub_), vkSet: !!(vk.admin && vk.manager && vk.viewer)};
+  }
+  if (b.action === 'vk_set') {
+    var k = b.vk || {}; if (!k.admin || !k.manager || !k.viewer) return {ok: false, error: 'bad_keys'};
+    PropertiesService.getScriptProperties().setProperty('VK', JSON.stringify({admin: String(k.admin), manager: String(k.manager), viewer: String(k.viewer)})); return {ok: true};
+  }
+  if (b.action === 'users_import') {
+    if (rows.length && !b.force) return {ok: false, error: 'not_empty'};
+    var list = (b.users || []).filter(function (u) { return digits6_(u.uid).length === 6 && GROUPS[u.group]; });
+    if (!list.length) return {ok: false, error: 'empty'};
+    var vals = list.map(function (u) { return [digits6_(u.uid), String(u.name || ''), String(u.mobile || ''), u.group, String(u.pw || ''), String(u.pages || '*'), u.active === 'no' ? 'no' : 'yes', now]; });
+    sh.getRange(2, 1, Math.max(sh.getLastRow(), 1), 8).clearContent();
+    sh.getRange(2, 1, vals.length, 8).setNumberFormat('@').setValues(vals);
+    return {ok: true, n: vals.length};
+  }
+  var uid = digits6_(b.uid || (b.user || {}).uid);
+  if (b.action === 'user_del') {
+    var d = rows.filter(function (o) { return o.uid === uid; })[0]; if (!d) return {ok: false, error: 'not_found'};
+    if (d.group === 'admin' && admins_(uid) < 1) return {ok: false, error: 'last_admin'};
+    sh.deleteRow(d._row); return {ok: true};
+  }
+  if (b.action === 'user_save') {
+    var u = b.user || {}; if (uid.length !== 6) return {ok: false, error: 'bad_uid'};
+    var cur = rows.filter(function (o) { return o.uid === uid; })[0];
+    var grp = u.group || (cur && cur.group) || 'share'; if (!GROUPS[grp]) return {ok: false, error: 'bad_group'};
+    var act = u.active === 'no' ? 'no' : 'yes';
+    if (cur && cur.group === 'admin' && (grp !== 'admin' || act === 'no') && admins_(uid) < 1) return {ok: false, error: 'last_admin'};
+    var pw = u.pw !== undefined && u.pw !== '' ? String(u.pw) : (cur ? cur.pw : '');
+    if (pw.length < 4) return {ok: false, error: 'short_pw'};
+    var row = [uid, String(u.name !== undefined ? u.name : (cur ? cur.name : '')), String(u.mobile !== undefined ? u.mobile : (cur ? cur.mobile : '')), grp, pw, String(u.pages !== undefined ? u.pages : (cur ? cur.pages : '*')) || '*', act, now];
+    if (cur) sh.getRange(cur._row, 1, 1, 8).setValues([row]); else { sh.getRange(sh.getLastRow() + 1, 1, 1, 8).setNumberFormat('@'); sh.appendRow(row); }
+    return {ok: true};
+  }
+  return {ok: false, error: 'bad_action'};
 }
