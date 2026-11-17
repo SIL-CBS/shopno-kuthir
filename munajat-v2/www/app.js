@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 43, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 44, APPDATE = '১৬ নভেম্বর ২০২৬';
   const CHANGES = [
+    [44, '১৭ নভে ২০২৬', ['মোবাইল অ্যাপ (APK) এখন নিজে থেকে update হয় — লেখা ও ফিচার ওয়েবসাইট থেকে আসে', 'APK-র নিজের অংশ পুরোনো হলে উপরে "নতুন APK" বোতাম দেখায়']],
     [43, '১৭ নভে ২০২৬', ['বাংলা অর্থ এখন শুরু থেকেই দেখায় (আগে "অর্থ" চিপ চাপতে হতো)']],
     [42, '১৬ নভে ২০২৬', ['পরীক্ষামূলক: বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — শুধু শনিবার দোয়া ১ ও ২', 'সেটিংসে: বন্ধ / প্রতি লাইনের পরে / পুরো দোয়ার পরে / শুধু অর্থ, আর কণ্ঠের গতি']],
     [41, '১৬ নভে ২০২৬', ['সেটিংস ও "অ্যাপ সম্পর্কে" পাতার শিরোনাম নীল রঙে']],
@@ -272,6 +273,10 @@
     save(); S.perDay[id] = Object.assign({}, S.perDay[id] || {}, {dua: i}); try { localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('mm_day', id); sessionStorage.setItem('mm_go', '1'); } catch (e) {} location.reload(); }
   function offInfo() { const v = OFF(), el = $('#offInfo'); if (el) el.textContent = (v ? 'এখন: ' + (v > 0 ? 'পরে ' : 'আগে ') + bn(Math.round(Math.abs(v) * 1000)) + ' মি.সে. · ' : '') + 'দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।'; }
   offInfo();
+  /* APK: ভেতরের লেখা ওয়েবসাইট থেকে আসে (নিজে update)। APK-র নিজের অংশ পুরোনো হলে নতুন APK নেওয়ার বোতাম */
+  const APK_LATEST = 2, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
+  const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
+  if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
   render(); loadMedia(); drawDays();
   try { if (sessionStorage.getItem('mm_go')) { sessionStorage.removeItem('mm_go'); const el = $('#d-' + S.dua); if (el) setTimeout(() => el.scrollIntoView({block: 'start'}), 50); } } catch (e) {}
   try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}

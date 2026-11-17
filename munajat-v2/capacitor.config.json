@@ -2,10 +2,15 @@
   "appId": "bd.sohel.munajat",
   "appName": "মুনাজাতে মাকবূল",
   "webDir": "www",
-  "android": { "allowMixedContent": false },
+  "android": {
+    "allowMixedContent": false
+  },
   "server": {
     "url": "https://sil-cbs.github.io/shopno-kuthir/munajat/",
     "cleartext": false,
-    "allowNavigation": ["sil-cbs.github.io"]
-  }
+    "allowNavigation": [
+      "sil-cbs.github.io"
+    ]
+  },
+  "appendUserAgent": "MunajatApk/2"
 }
