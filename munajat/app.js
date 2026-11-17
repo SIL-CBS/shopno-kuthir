@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 44, APPDATE = '১৬ নভেম্বর ২০২৬';
+  const APPVER = 45, APPDATE = '১৭ নভেম্বর ২০২৬';
   const CHANGES = [
+    [45, '১৭ নভে ২০২৬', ['বাংলা অর্থ শোনানো ঠিক করা হলো — অ্যাপে (APK ৩) ফোনের নিজস্ব বাংলা কণ্ঠ ব্যবহার হয়', 'কণ্ঠ না পেলে কারণ দেখায় আর পরের লাইনে চলে যায়']],
     [44, '১৭ নভে ২০২৬', ['মোবাইল অ্যাপ (APK) এখন নিজে থেকে update হয় — লেখা ও ফিচার ওয়েবসাইট থেকে আসে', 'APK-র নিজের অংশ পুরোনো হলে উপরে "নতুন APK" বোতাম দেখায়']],
     [43, '১৭ নভে ২০২৬', ['বাংলা অর্থ এখন শুরু থেকেই দেখায় (আগে "অর্থ" চিপ চাপতে হতো)']],
     [42, '১৬ নভে ২০২৬', ['পরীক্ষামূলক: বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — শুধু শনিবার দোয়া ১ ও ২', 'সেটিংসে: বন্ধ / প্রতি লাইনের পরে / পুরো দোয়ার পরে / শুধু অর্থ, আর কণ্ঠের গতি']],
@@ -86,18 +87,30 @@
   addEventListener('online', () => render()); addEventListener('offline', () => render());
   /* ---------- বাংলা অর্থ পড়ে শোনানো (ফোনের বাংলা কণ্ঠ) — পরীক্ষামূলক: শুধু শনিবার দোয়া ১–২ ---------- */
   const TTS_TEST = (i) => DAYID === 'saturday' && i <= 1;
-  const ttsOn = (i) => S.tts && S.tts !== 'off' && TTS_TEST(i) && 'speechSynthesis' in window;
-  let ttsBusy = false, bnVoice = null;
+  let ntts;
+  const NTTS = () => { if (ntts !== undefined) return ntts; ntts = null; try { const C = window.Capacitor; if (!C || !(C.isNativePlatform && C.isNativePlatform())) return null; if (C.Plugins && C.Plugins.TextToSpeech && C.Plugins.TextToSpeech.speak) ntts = C.Plugins.TextToSpeech; else if (C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('TextToSpeech'))) { const call = (m) => (o) => C.nativePromise('TextToSpeech', m, o || {}); ntts = { speak: call('speak'), stop: call('stop'), isLanguageSupported: call('isLanguageSupported') }; } } catch (e) { ntts = null; } lg('tts', 'native-plugin', ntts ? 'yes' : 'no'); return ntts; };
+  const ttsOn = (i) => S.tts && S.tts !== 'off' && TTS_TEST(i) && (!!NTTS() || 'speechSynthesis' in window);
+  let ttsBusy = false, bnVoice = null, ttsTok = 0;
   const pickVoice = () => { try { const vs = speechSynthesis.getVoices(); bnVoice = vs.find((v) => /^bn[-_]BD/i.test(v.lang)) || vs.find((v) => /^bn/i.test(v.lang)) || null; } catch (e) {} return bnVoice; };
   if ('speechSynthesis' in window) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+  const ttsCancel = () => { ttsTok++; const n = NTTS(); if (n) { try { n.stop().catch(() => {}); } catch (e) {} } try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} };
   const ttsNext = () => { ttsBusy = false; if (!plan) return; plan.k++; const n = plan.items[plan.k]; if (!n) return finishDua(); later(startItem, document.hidden ? 0 : 400); };
-  const speakItem = (it) => { media.pause(); wantPlay = true; highlight(null, it); renderBar();
-    if (!pickVoice()) { status('ফোনে বাংলা কণ্ঠ পাওয়া যায়নি — অর্থ বাদ দিয়ে চলছে'); lg('tts', 'no-bn-voice'); return later(ttsNext, 1200); }
-    lg('tts', 'dua', duas[it.i].no, 'line', it.j == null ? '-' : it.j + 1, bnVoice.name);
-    status('অর্থ শোনানো হচ্ছে'); try { speechSynthesis.cancel(); } catch (e) {}
-    const u = new SpeechSynthesisUtterance(it.tts); u.lang = bnVoice.lang || 'bn-BD'; u.voice = bnVoice; u.rate = +S.ttsRate || 1;
-    u.onend = () => { if (ttsBusy && plan && plan.items[plan.k] === it) ttsNext(); }; u.onerror = (e) => { lg('tts-error', e.error || ''); if (ttsBusy && plan && plan.items[plan.k] === it) ttsNext(); };
-    ttsBusy = true; speechSynthesis.speak(u); };
+  const ttsSkip = (msg, why) => { status(msg); lg('tts', why); later(ttsNext, 1500); };
+  const speakItem = (it) => { media.pause(); wantPlay = true; highlight(null, it); renderBar(); ttsCancel(); const tok = ttsTok, mine = () => tok === ttsTok && ttsBusy && plan && plan.items[plan.k] === it;
+    const rate = +S.ttsRate || 1, n = NTTS();
+    lg('tts', 'dua', duas[it.i].no, 'line', it.j == null ? '-' : it.j + 1, n ? 'native' : 'web');
+    status('অর্থ শোনানো হচ্ছে'); ttsBusy = true;
+    if (n) {
+      const go = (lang) => n.speak({ text: it.tts, lang, rate, pitch: 1, volume: 1, category: 'playback' }).then(() => { if (mine()) ttsNext(); }).catch((e) => { lg('tts-error', 'native', (e && e.message) || e); if (mine()) { ttsBusy = false; ttsSkip('বাংলা কণ্ঠে সমস্যা — ফোনের Settings → Text-to-speech-এ Google ইঞ্জিন ও বাংলা ভাষা বসান', 'native-fail'); } });
+      return n.isLanguageSupported({ lang: 'bn-BD' }).then((r) => { if (r && r.supported) return go('bn-BD'); return n.isLanguageSupported({ lang: 'bn' }).then((r2) => { if (r2 && r2.supported) return go('bn'); lg('tts', 'native-no-bn'); return go('bn-BD'); }); }).catch(() => go('bn-BD'));
+    }
+    if (!('speechSynthesis' in window)) { ttsBusy = false; return ttsSkip('এই ব্রাউজারে কণ্ঠে পড়ার সুবিধা নেই', 'no-speechSynthesis'); }
+    const v = pickVoice(); if (!v) lg('tts', 'no-bn-voice-listed, trying lang bn-BD');
+    const u = new SpeechSynthesisUtterance(it.tts); u.lang = (v && v.lang) || 'bn-BD'; if (v) u.voice = v; u.rate = rate;
+    let started = false; u.onstart = () => { started = true; };
+    u.onend = () => { if (mine()) ttsNext(); }; u.onerror = (e) => { lg('tts-error', e.error || ''); if (mine()) { ttsBusy = false; ttsSkip('বাংলা কণ্ঠ পাওয়া যায়নি — Chrome/ফোনে Google বাংলা কণ্ঠ বসান', 'web-error'); } };
+    setTimeout(() => { if (!started && mine() && !speechSynthesis.speaking) { lg('tts', 'web-no-start'); ttsBusy = false; ttsCancel(); ttsSkip('বাংলা কণ্ঠ চালু হলো না — ফোনের Settings → Text-to-speech-এ বাংলা বসান', 'web-no-start'); } }, 4000);
+    setTimeout(() => { try { speechSynthesis.speak(u); } catch (e) { lg('tts-error', String(e)); } }, 60); };
   const withTts = (i, base) => { if (!ttsOn(i) || S.mode === 'hifz') return base; const d = duas[i], mn = (j) => d.lines[j].mn || '';
     const lineAudio = (j, rep, of) => { const [s, e] = lineSpan(i, j); return {i, j, s, e, rep, of}; };
     if (S.tts === 'only') { const o = []; d.lines.forEach((_, j) => o.push({i, j, tts: mn(j), rep: 1, of: 1})); return o; }
@@ -140,9 +153,9 @@
     /* বিরতির মাঝে পর্দা বন্ধ হলে অপেক্ষা না করে এখনই পরেরটা চালু — পেছনে থেকে নতুন করে শুরু করতে ফোন বাধা দিতে পারে */
     if (document.hidden && pend) { clearTimeout(timer); const f = pend; pend = null; f(); } });
   const hifzGo = (again) => { if (!plan) return; hifzShow(false); if (!again) plan.k++; startItem(); };
-  const stop = () => { ttsBusy = false; try { speechSynthesis.cancel(); } catch (e) {} hifzShow(false); clearTimeout(timer); pend = null; unmuteAt = 0; media.muted = false; wantPlay = false; media.pause(); plan = null; status(); render(); };
+  const stop = () => { ttsBusy = false; ttsCancel(); hifzShow(false); clearTimeout(timer); pend = null; unmuteAt = 0; media.muted = false; wantPlay = false; media.pause(); plan = null; status(); render(); };
   const startList = () => { const q = queue(); playDua(q.includes(S.dua) ? S.dua : q[0]); };
-  const toggle = () => { if (!media.src) return; if (hifzWait) return hifzGo(false); if (ttsBusy) { ttsBusy = false; try { speechSynthesis.cancel(); } catch (e) {} wantPlay = false; status('থামানো'); renderBar(); return; } if (pend) { clearTimeout(timer); pend = null; wantPlay = false; status('থামানো'); renderBar(); return; } if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); media.muted = false; wantPlay = false; status('থামানো'); } else if (plan) { const it = plan.items[plan.k], t = media.currentTime - OFF(); if (!it || it.tts != null || t < it.s - 0.2 || t >= it.e - 0.05) { startItem(); } else { wantPlay = true; media.muted = false; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } } else startList(); renderBar(); };
+  const toggle = () => { if (!media.src) return; if (hifzWait) return hifzGo(false); if (ttsBusy) { ttsBusy = false; ttsCancel(); wantPlay = false; status('থামানো'); renderBar(); return; } if (pend) { clearTimeout(timer); pend = null; wantPlay = false; status('থামানো'); renderBar(); return; } if (plan && wantPlay && !media.paused) { clearTimeout(timer); media.pause(); media.muted = false; wantPlay = false; status('থামানো'); } else if (plan) { const it = plan.items[plan.k], t = media.currentTime - OFF(); if (!it || it.tts != null || t < it.s - 0.2 || t >= it.e - 0.05) { startItem(); } else { wantPlay = true; media.muted = false; const p = media.play(); if (p && p.catch) p.catch(() => {}); status(); } } else startList(); renderBar(); };
   /* ---------- দেখানো ---------- */
   const status = (msg) => { const it = plan && plan.items[plan.k], el = $('#status'); if (!el) return;
     if (!it) { el.textContent = msg || 'থামানো'; renderBar(); return; }
@@ -274,7 +287,7 @@
   function offInfo() { const v = OFF(), el = $('#offInfo'); if (el) el.textContent = (v ? 'এখন: ' + (v > 0 ? 'পরে ' : 'আগে ') + bn(Math.round(Math.abs(v) * 1000)) + ' মি.সে. · ' : '') + 'দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।'; }
   offInfo();
   /* APK: ভেতরের লেখা ওয়েবসাইট থেকে আসে (নিজে update)। APK-র নিজের অংশ পুরোনো হলে নতুন APK নেওয়ার বোতাম */
-  const APK_LATEST = 2, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
+  const APK_LATEST = 3, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
   const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
   if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
   render(); loadMedia(); drawDays();
