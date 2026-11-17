@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 45, APPDATE = '১৭ নভেম্বর ২০২৬';
+  const APPVER = 46, APPDATE = '১৭ নভেম্বর ২০২৬';
   const CHANGES = [
+    [46, '১৭ নভে ২০২৬', ['প্রতিটা দোয়ায় "অর্থ" বোতাম — পুরো বাংলা অর্থ একসাথে, উৎসসহ', 'শেয়ার: আরবি, উচ্চারণ, অর্থ আর উৎস একসাথে (WhatsApp ইত্যাদি)', 'অ্যাপ খুললে আজকের দিন নিজে খোলে (সেটিং থেকে বন্ধ করা যায়)', 'যেখানে থেমেছিলেন সেখান থেকে চালানোর বোতাম', 'আরবি ফন্ট বাছাই (আমিরি / উসমানি / নাস্খ) আর রঙ (দিন / রাত / আরামদায়ক রাত)']],
     [45, '১৭ নভে ২০২৬', ['বাংলা অর্থ শোনানো ঠিক করা হলো — অ্যাপে (APK ৩) ফোনের নিজস্ব বাংলা কণ্ঠ ব্যবহার হয়', 'কণ্ঠ না পেলে কারণ দেখায় আর পরের লাইনে চলে যায়']],
     [44, '১৭ নভে ২০২৬', ['মোবাইল অ্যাপ (APK) এখন নিজে থেকে update হয় — লেখা ও ফিচার ওয়েবসাইট থেকে আসে', 'APK-র নিজের অংশ পুরোনো হলে উপরে "নতুন APK" বোতাম দেখায়']],
     [43, '১৭ নভে ২০২৬', ['বাংলা অর্থ এখন শুরু থেকেই দেখায় (আগে "অর্থ" চিপ চাপতে হতো)']],
@@ -32,13 +33,17 @@
     [20, '১৫ নভে ২০২৬', ['শনিবার যোগ']],
     [19, '১৫ নভে ২০২৬', ['রবিবার যোগ, YouTube লিংক ও কপি বোতাম, ফাইল বদলান বোতাম']],
   ];
-  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: true, hideAr: false, video: false, font: 30, nudge: {}, sel: []};
+  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: true, hideAr: false, video: false, font: 30, arf: 'ami', theme: 'auto', autoDay: true, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
   if (!S.mnOn1) { S.showMeaning = true; S.mnOn1 = 1; } /* একবার: বাংলা অর্থ চালু করে দাও */ if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
   /* ---------- দিন: ৭ দিনের তালিকা; যে দিনের লেখা এখনো নেই, সেটা পুরো ফাইল এক টানা বাজে ---------- */
   const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল']];
   let DAYID = 'friday'; try { DAYID = localStorage.getItem('mm_day') || 'friday'; } catch (e) {}
+  let FRESH = false; try { FRESH = !sessionStorage.getItem('mm_s'); sessionStorage.setItem('mm_s', '1'); } catch (e) {}
+  if (FRESH && S.autoDay !== false) { try { if (!sessionStorage.getItem('mm_go')) { DAYID = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()]; localStorage.setItem('mm_day', DAYID); } } catch (e) {} }
+  const applyLook = () => { const r = document.documentElement; if (S.theme && S.theme !== 'auto') r.dataset.theme = S.theme; else delete r.dataset.theme; if (S.arf && S.arf !== 'ami') r.dataset.arf = S.arf; else delete r.dataset.arf; };
+  applyLook();
   if (!DAYS.some((d) => d[0] === DAYID)) DAYID = 'friday';
   const DMETA = DAYS.find((d) => d[0] === DAYID);
   const day = DATA.days.find((d) => d.id === DAYID) || {id: DAYID, title: DMETA[1] + ' · ' + DMETA[2], range: 'লেখা এখনো যোগ হয়নি — শুধু অডিও', placeholder: true,
@@ -171,7 +176,7 @@
     $('#pickInfo').textContent = n ? bn(n) + 'টি দোয়া বাছাই — শুধু এগুলোই বাজবে' : 'কিছু বাছাই নেই — সব দোয়া ক্রমে বাজবে';
     $('#pickAll').setAttribute('aria-pressed', String(n === duas.length)); $('#pickNone').disabled = !n; };
   try { if (!localStorage.getItem('mm_vid_off1')) { S.video = false; localStorage.setItem('mm_vid_off1', '1'); } if (!localStorage.getItem('mm_ar_on1')) { S.hideAr = false; localStorage.setItem('mm_ar_on1', '1'); } } catch (e) {}
-  const render = () => { document.body.classList.toggle('m-line', S.mode === 'line');
+  const render = () => { applyLook(); document.body.classList.toggle('m-line', S.mode === 'line');
     document.documentElement.style.setProperty('--ar', S.font + 'px');
     document.body.classList.toggle('no-bn', !S.showBn); document.body.classList.toggle('show-mn', S.showMeaning); document.body.classList.toggle('hide-ar', S.hideAr); document.body.classList.toggle('no-video', !S.video);
     $$('[data-tg]').forEach((b) => b.setAttribute('aria-pressed', String(!!S[b.dataset.tg])));
@@ -179,7 +184,7 @@
     $('#reps').textContent = bn(S.reps) + '×'; $('#gap').textContent = bn(S.gap) + ' সে.'; $('#whole').textContent = bn(S.whole) + '×'; $('#wholeRow').hidden = S.mode !== 'line';
     renderPick();
     $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua, n = nd(i), sel = isSel(i);
-      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button>' + refChip(d) + '<button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
+      return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button>' + (d.lines.some((L) => L.mn) ? '<button class="mb" data-mean="' + i + '" aria-label="পুরো বাংলা অর্থ" title="পুরো বাংলা অর্থ">অর্থ</button>' : '') + refChip(d) + '<button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
         (open ? '<div class="lines">' + d.lines.map((L, j) => '<div class="ln" id="l-' + i + '-' + j + '" data-line="' + j + '">' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div><div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div></div>').join('') +
           '<div class="nudge"><span>সময় ঠিক করুন</span><button data-nudge="' + i + ':0:-0.25">শুরু −</button><button data-nudge="' + i + ':0:0.25">শুরু +</button><button data-nudge="' + i + ':1:-0.25">শেষ −</button><button data-nudge="' + i + ':1:0.25">শেষ +</button><small>' + (n[0] || n[1] ? 'শুরু ' + n[0] + ' / শেষ ' + n[1] + ' সে.' : '') + '</small></div></div>' : '') + '</article>'; }).join('');
     lastHL = ''; const ci = plan && plan.items[plan.k]; highlight(ci && ci.j != null ? null : (media.currentTime || 0), ci); status(); };
@@ -207,9 +212,17 @@
     if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); replan(+k.split(':')[0]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
     if (b.id === 'logCopy') { const t = logText(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'কপি হয়েছে ✓'; }).catch(() => { const r = document.createRange(); r.selectNodeContents($('#logBox')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই করা হলো — কপি করুন'; }); return; }
     if (b.id === 'logClear') { LOG.length = 0; try { localStorage.removeItem(LOGK); } catch (e) {} $('#logBox').textContent = ''; return; }
+    if (ds.mean != null) { drawMean(+ds.mean); $('#mean').hidden = false; return; } if (b.id === 'meanClose') { $('#mean').hidden = true; return; }
+    if (ds.resume != null) { const r = $('#resume'); if (r) r.remove(); if (ds.resume !== 'x') playDua(+ds.resume); return; }
+    if (ds.share != null) { shareDua(+ds.share, b); return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
+  const duaText = (i) => { const d = duas[i], r = d.ref; return 'দোয়া ' + d.no + ' — ' + day.title + '\n\n' + d.lines.map((L) => L.ar + (L.bn ? '\n' + L.bn : '') + (L.mn ? '\n' + L.mn : '')).join('\n\n') + (r ? '\n\nউৎস: ' + r.txt : '') + '\n\n— মুনাজাতে মাকবূল'; };
+  const shareDua = (i, b) => { const t = duaText(i); if (navigator.share) { navigator.share({ title: 'দোয়া ' + duas[i].no, text: t }).catch(() => {}); return; } const done = () => { b.textContent = 'কপি হয়েছে ✓'; }; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => { location.href = 'https://wa.me/?text=' + encodeURIComponent(t); }); };
+  function drawMean(i) { const d = duas[i]; $('#meanTitle').textContent = 'দোয়া ' + d.no + ' — পুরো অর্থ';
+    $('#meanBody').innerHTML = '<p class="mfull">' + d.lines.map((L) => esc(L.mn || '')).filter(Boolean).join(' ') + '</p>' + (d.ref ? refHtml(d) : '') + '<div class="mrow"><button type="button" class="pill" data-share="' + i + '">📤 শেয়ার (আরবি + উচ্চারণ + অর্থ)</button></div>'; }
+  $('#mean').addEventListener('click', (ev) => { if (ev.target.id === 'mean') $('#mean').hidden = true; });
   $('#about').addEventListener('click', (ev) => { if (ev.target.id === 'about') $('#about').hidden = true; });
   function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; const q = d.duas.filter((x) => x.ref && x.ref.t === 'q').length, h = d.duas.filter((x) => x.ref && x.ref.t === 'h').length; const tot = d.duas.filter((x) => /^[০-৯]/.test(x.no)).length; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ<br><span class="mu">উৎস: ' + (q + h ? '📖 ' + bn(q) + ' · 📜 ' + bn(h) + (tot - q - h > 0 ? ' · বাকি ' + bn(tot - q - h) : ' · সব ✓') : 'এখনো যোগ হয়নি') + '</span></td></tr>'; }).join('');
     $('#aboutBody').innerHTML = '<div class="vb"><div><div class="mu">অ্যাপ সংস্করণ</div><b>' + bn(APPVER) + '</b></div><div class="mu">হালনাগাদ: ' + APPDATE + (apkBuild ? ' · APK বিল্ড ' + bn(apkBuild) : '') + '<br>মুনাজাতে মাকবূল · ৭ দিনের দোয়া</div></div>'
@@ -291,6 +304,7 @@
   const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
   if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
   render(); loadMedia(); drawDays();
+  if (FRESH && !day.placeholder && S.dua > 0 && duas[S.dua]) { const r = document.createElement('div'); r.className = 'resume'; r.id = 'resume'; r.innerHTML = '<span>শেষবার দোয়া ' + esc(duas[S.dua].no) + '-এ ছিলেন — সেখান থেকে চালাবেন?</span><button type="button" data-resume="' + S.dua + '">▶ চালান</button><button type="button" data-resume="x" aria-label="বন্ধ">✕</button>'; const L = $('#list'); L.parentNode.insertBefore(r, L); }
   try { if (sessionStorage.getItem('mm_go')) { sessionStorage.removeItem('mm_go'); const el = $('#d-' + S.dua); if (el) setTimeout(() => el.scrollIntoView({block: 'start'}), 50); } } catch (e) {}
   try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}
 })();
