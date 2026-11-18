@@ -14,7 +14,7 @@ for(const id of ids){await p.evaluate(h=>{location.hash=h},id);await p.waitForTi
   await p.keyboard.press('Escape');await p.waitForTimeout(150);}
  rows.push({id,...v,pop});}
 const ok=x=>x?'✔':'✘';
-const EX=/^(en-(exp|dep|bal|bin|bout|voice|img)|set-|old|deed-|all-scpdf|g-)/;const gaps=[];let md='| স্ক্রিন | টেবিল | ক্লিকযোগ্য সারি | Excel | PDF | ছবি | WhatsApp | পপআপ | গ্রিড+সিঙ্গেল | পপআপ টেবিল | পপআপ এক্সপোর্ট (X/P/ছবি/WA) | অনুচ্ছেদ-স্টাইল ধাপ |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n';
+const EX=/^(my$|en-(exp|dep|bal|bin|bout|voice|img)|set-|old|deed-|all-scpdf|g-)/;const gaps=[];let md='| স্ক্রিন | টেবিল | ক্লিকযোগ্য সারি | Excel | PDF | ছবি | WhatsApp | পপআপ | গ্রিড+সিঙ্গেল | পপআপ টেবিল | পপআপ এক্সপোর্ট (X/P/ছবি/WA) | অনুচ্ছেদ-স্টাইল ধাপ |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n';
 for(const r of rows){const P=r.pop;if(EX.test(r.id)&&(!(r.tables&&r.click)||/^en-/.test(r.id)))continue;md+=`| ${r.id} | ${r.tables} | ${r.click} | ${ok(r.xl)} | ${ok(r.pdf)} | ${ok(r.img)} | ${ok(r.wa)} | ${P.opened?'✔':'—'} | ${P.opened?ok(P.grid&&P.single):'—'} | ${P.opened?ok(P.tbl):'—'} | ${P.opened?[P.xl,P.pdf,P.img,P.wa].map(ok).join(''):'—'} | ${P.opened?P.paras:'—'} |\n`;
  const g=[];if(r.tables&&!(r.xl&&r.pdf&&r.img&&r.wa))g.push('এক্সপোর্ট বার অসম্পূর্ণ');if(r.tables&&!r.click)g.push('সারি ক্লিকযোগ্য নয়');if(P.opened&&!(P.grid&&P.single))g.push('গ্রিড/সিঙ্গেল নেই');if(P.opened&&!P.tbl)g.push('পপআপে টেবিল নেই (অনুচ্ছেদ)');if(P.opened&&!(P.xl&&P.pdf&&P.img&&P.wa))g.push('পপআপ এক্সপোর্ট অসম্পূর্ণ');if(g.length)gaps.push(r.id+': '+g.join('; '));}
 require('fs').writeFileSync('audit-report.md',md+'\n## গ্যাপ\n'+gaps.map(x=>'- '+x).join('\n')+'\n');
