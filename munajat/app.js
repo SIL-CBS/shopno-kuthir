@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 47, APPDATE = '১৭ নভেম্বর ২০২৬';
+  const APPVER = 48, APPDATE = '১৭ নভেম্বর ২০২৬';
   const CHANGES = [
+    [48, '১৮ নভে ২০২৬', ['অ্যাপে অডিও চালু করলে বন্ধ হয়ে যাওয়া ঠিক করার চেষ্টা — নোটিফিকেশন প্লেয়ার আপাতত সেটিং থেকে চালু করতে হবে (পরীক্ষামূলক)', 'অ্যাপ হঠাৎ বন্ধ হলে কারণ ⓘ-এর লগে আসে']],
     [47, '১৭ নভে ২০২৬', ['নতুন APK (বিল্ড ৪): নিজস্ব আইকন আর শুরুর পর্দা', 'ফোনের নিজস্ব অডিও সার্ভিস — লক স্ক্রিনে বা অ্যাপ পেছনে থাকলেও চলে, নোটিফিকেশনে প্লেয়ার (চালান/থামান/আগে/পরে)']],
     [46, '১৭ নভে ২০২৬', ['প্রতিটা দোয়ায় "অর্থ" বোতাম — পুরো বাংলা অর্থ একসাথে, উৎসসহ', 'শেয়ার: আরবি, উচ্চারণ, অর্থ আর উৎস একসাথে (WhatsApp ইত্যাদি)', 'অ্যাপ খুললে আজকের দিন নিজে খোলে (সেটিং থেকে বন্ধ করা যায়)', 'যেখানে থেমেছিলেন সেখান থেকে চালানোর বোতাম', 'আরবি ফন্ট বাছাই (আমিরি / উসমানি / নাস্খ) আর রঙ (দিন / রাত / আরামদায়ক রাত)']],
     [45, '১৭ নভে ২০২৬', ['বাংলা অর্থ শোনানো ঠিক করা হলো — অ্যাপে (APK ৩) ফোনের নিজস্ব বাংলা কণ্ঠ ব্যবহার হয়', 'কণ্ঠ না পেলে কারণ দেখায় আর পরের লাইনে চলে যায়']],
@@ -34,7 +35,7 @@
     [20, '১৫ নভে ২০২৬', ['শনিবার যোগ']],
     [19, '১৫ নভে ২০২৬', ['রবিবার যোগ, YouTube লিংক ও কপি বোতাম, ফাইল বদলান বোতাম']],
   ];
-  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: true, hideAr: false, video: false, font: 30, arf: 'ami', theme: 'auto', autoDay: true, nudge: {}, sel: []};
+  const KEY = 'mm_v1', VER = 4, DEF = {v: VER, dua: 0, mode: 'dua', reps: 3, gap: 2, whole: 1, after: 'next', tts: 'off', ttsRate: 1, listLoop: true, speed: 1, showBn: true, showMeaning: true, hideAr: false, video: false, font: 30, arf: 'ami', theme: 'auto', autoDay: true, nms: false, nudge: {}, sel: []};
   let S; try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { S = Object.assign({}, DEF); }
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
   if (!S.mnOn1) { S.showMeaning = true; S.mnOn1 = 1; } /* একবার: বাংলা অর্থ চালু করে দাও */ if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
@@ -152,7 +153,7 @@
   const check = () => { unmute(); const it = plan && plan.items[plan.k]; if (it && wantPlay && !media.paused && media.currentTime >= it.e + OFF()) { finishItem(); return true; } return false; };
   /* পর্দা বন্ধ / অ্যাপ পেছনে থাকলে requestAnimationFrame চলে না — তাই টাইমার + timeupdate দিয়েও দোয়ার শেষ ধরা হয় */
   const sched = () => { clearTimeout(endT); const it = plan && plan.items[plan.k]; if (!it || media.paused || !wantPlay) return; const ms = (it.e + OFF() - media.currentTime) / (media.playbackRate || 1) * 1000; endT = setTimeout(() => { if (!check()) sched(); }, Math.max(15, Math.min(ms - 10, 5000))); };
-  let nms; const NMS = () => { if (nms !== undefined) return nms; nms = null; try { const C = window.Capacitor; if (!C || !(C.isNativePlatform && C.isNativePlatform())) return null; const P = C.Plugins && C.Plugins.MediaSession; if (P && P.setPlaybackState) nms = P; else if (C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('MediaSession'))) { const call = (m) => (o) => C.nativePromise('MediaSession', m, o || {}); nms = { setMetadata: call('setMetadata'), setPlaybackState: call('setPlaybackState'), setActionHandler: (o, cb) => C.nativeCallback('MediaSession', 'setActionHandler', o, cb) }; } } catch (e) { nms = null; } lg('nms', nms ? 'yes' : 'no'); return nms; };
+  let nms; const NMS = () => { if (!S.nms) return null; if (nms !== undefined) return nms; nms = null; try { const C = window.Capacitor; if (!C || !(C.isNativePlatform && C.isNativePlatform())) return null; const P = C.Plugins && C.Plugins.MediaSession; if (P && P.setPlaybackState) nms = P; else if (C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('MediaSession'))) { const call = (m) => (o) => C.nativePromise('MediaSession', m, o || {}); nms = { setMetadata: call('setMetadata'), setPlaybackState: call('setPlaybackState'), setActionHandler: (o, cb) => C.nativeCallback('MediaSession', 'setActionHandler', o, cb) }; } } catch (e) { nms = null; } lg('nms', nms ? 'yes' : 'no'); return nms; };
   let nmsState = '', nmsTitle = '';
   const nmsSync = (it) => { const n = NMS(); if (!n) return; const st = plan && wantPlay ? 'playing' : (plan ? 'paused' : 'none'); try { if (it) { const t = 'দোয়া ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''); if (t !== nmsTitle) { nmsTitle = t; n.setMetadata({ title: t, artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল' }).catch(() => {}); } } if (st !== nmsState) { nmsState = st; n.setPlaybackState({ playbackState: st }).catch(() => {}); } } catch (e) { lg('nms-error', String(e)); } };
   const meta = (it) => { nmsSync(it); if (!('mediaSession' in navigator) || !it) return; try { navigator.mediaSession.metadata = new MediaMetadata({title: 'দোয়া ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''), artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল', artwork: [{src: 'icon.svg', sizes: '512x512', type: 'image/svg+xml'}]}); } catch (e) {} };
@@ -305,10 +306,11 @@
   function offInfo() { const v = OFF(), el = $('#offInfo'); if (el) el.textContent = (v ? 'এখন: ' + (v > 0 ? 'পরে ' : 'আগে ') + bn(Math.round(Math.abs(v) * 1000)) + ' মি.সে. · ' : '') + 'দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।'; }
   offInfo();
   /* APK: ভেতরের লেখা ওয়েবসাইট থেকে আসে (নিজে update)। APK-র নিজের অংশ পুরোনো হলে নতুন APK নেওয়ার বোতাম */
-  const APK_LATEST = 4, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
+  const APK_LATEST = 5, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
   const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
   if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
   render(); loadMedia(); drawDays();
+  setTimeout(() => { try { if (window.__nc) { lg('native-crash', String(window.__nc).slice(0, 1500)); window.__nc = null; } } catch (e) {} }, 5000);
   if (FRESH && !day.placeholder && S.dua > 0 && duas[S.dua]) { const r = document.createElement('div'); r.className = 'resume'; r.id = 'resume'; r.innerHTML = '<span>শেষবার দোয়া ' + esc(duas[S.dua].no) + '-এ ছিলেন — সেখান থেকে চালাবেন?</span><button type="button" data-resume="' + S.dua + '">▶ চালান</button><button type="button" data-resume="x" aria-label="বন্ধ">✕</button>'; const L = $('#list'); L.parentNode.insertBefore(r, L); }
   try { if (sessionStorage.getItem('mm_go')) { sessionStorage.removeItem('mm_go'); const el = $('#d-' + S.dua); if (el) setTimeout(() => el.scrollIntoView({block: 'start'}), 50); } } catch (e) {}
   try { if (sessionStorage.getItem('mm_pick')) { sessionStorage.removeItem('mm_pick'); $('#fileMsg').textContent = DMETA[1] + '-এর অডিও দিন — নিচের "ফাইল বেছে নিন" চাপুন'; } } catch (e) {}
