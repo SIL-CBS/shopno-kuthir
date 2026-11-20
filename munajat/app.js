@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 48, APPDATE = '১৭ নভেম্বর ২০২৬';
+  const APPVER = 49, APPDATE = '২০ নভেম্বর ২০২৬';
   const CHANGES = [
+    [49, '২০ নভে ২০২৬', ['"অর্থ" পাতায় সেদিনের সব দোয়ার অর্থের তালিকা — যেকোনোটায় চাপলে একটা করে দেখা', 'একটা করে দেখায় আগের / পরের বোতাম', 'শেয়ার: WhatsApp, Telegram, Messenger / অন্য অ্যাপ, আর কপি']],
     [48, '১৮ নভে ২০২৬', ['অ্যাপে অডিও চালু করলে বন্ধ হয়ে যাওয়া ঠিক করার চেষ্টা — নোটিফিকেশন প্লেয়ার আপাতত সেটিং থেকে চালু করতে হবে (পরীক্ষামূলক)', 'অ্যাপ হঠাৎ বন্ধ হলে কারণ ⓘ-এর লগে আসে']],
     [47, '১৭ নভে ২০২৬', ['নতুন APK (বিল্ড ৪): নিজস্ব আইকন আর শুরুর পর্দা', 'ফোনের নিজস্ব অডিও সার্ভিস — লক স্ক্রিনে বা অ্যাপ পেছনে থাকলেও চলে, নোটিফিকেশনে প্লেয়ার (চালান/থামান/আগে/পরে)']],
     [46, '১৭ নভে ২০২৬', ['প্রতিটা দোয়ায় "অর্থ" বোতাম — পুরো বাংলা অর্থ একসাথে, উৎসসহ', 'শেয়ার: আরবি, উচ্চারণ, অর্থ আর উৎস একসাথে (WhatsApp ইত্যাদি)', 'অ্যাপ খুললে আজকের দিন নিজে খোলে (সেটিং থেকে বন্ধ করা যায়)', 'যেখানে থেমেছিলেন সেখান থেকে চালানোর বোতাম', 'আরবি ফন্ট বাছাই (আমিরি / উসমানি / নাস্খ) আর রঙ (দিন / রাত / আরামদায়ক রাত)']],
@@ -217,16 +218,38 @@
     if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); replan(+k.split(':')[0]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
     if (b.id === 'logCopy') { const t = logText(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'কপি হয়েছে ✓'; }).catch(() => { const r = document.createRange(); r.selectNodeContents($('#logBox')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই করা হলো — কপি করুন'; }); return; }
     if (b.id === 'logClear') { LOG.length = 0; try { localStorage.removeItem(LOGK); } catch (e) {} $('#logBox').textContent = ''; return; }
-    if (ds.mean != null) { drawMean(+ds.mean); $('#mean').hidden = false; return; } if (b.id === 'meanClose') { $('#mean').hidden = true; return; }
+    if (ds.mean != null) { drawMean(+ds.mean, 'one'); $('#mean').hidden = false; return; } if (b.id === 'meanClose') { $('#mean').hidden = true; return; }
     if (ds.resume != null) { const r = $('#resume'); if (r) r.remove(); if (ds.resume !== 'x') playDua(+ds.resume); return; }
     if (ds.share != null) { shareDua(+ds.share, b); return; }
+    if (ds.sh) { shareTo(ds.sh, meanIdx, b); return; } if (ds.mmode) { drawMean(null, ds.mmode); return; } if (ds.mpick != null) { drawMean(+ds.mpick, 'one'); $('#meanBody').parentNode.scrollTop = 0; return; }
+    if (ds.mnav) { const M = MEANS(), k = M.indexOf(meanIdx) + +ds.mnav; if (M[k] != null) { drawMean(M[k], 'one'); $('#meanBody').parentNode.scrollTop = 0; } return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
   const duaText = (i) => { const d = duas[i], r = d.ref; return 'দোয়া ' + d.no + ' — ' + day.title + '\n\n' + d.lines.map((L) => L.ar + (L.bn ? '\n' + L.bn : '') + (L.mn ? '\n' + L.mn : '')).join('\n\n') + (r ? '\n\nউৎস: ' + r.txt : '') + '\n\n— মুনাজাতে মাকবূল'; };
-  const shareDua = (i, b) => { const t = duaText(i); if (navigator.share) { navigator.share({ title: 'দোয়া ' + duas[i].no, text: t }).catch(() => {}); return; } const done = () => { b.textContent = 'কপি হয়েছে ✓'; }; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(done).catch(() => { location.href = 'https://wa.me/?text=' + encodeURIComponent(t); }); };
-  function drawMean(i) { const d = duas[i]; $('#meanTitle').textContent = 'দোয়া ' + d.no + ' — পুরো অর্থ';
-    $('#meanBody').innerHTML = '<p class="mfull">' + d.lines.map((L) => esc(L.mn || '')).filter(Boolean).join(' ') + '</p>' + (d.ref ? refHtml(d) : '') + '<div class="mrow"><button type="button" class="pill" data-share="' + i + '">📤 শেয়ার (আরবি + উচ্চারণ + অর্থ)</button></div>'; }
+  const SITE = 'https://sil-cbs.github.io/shopno-kuthir/munajat/';
+  const nShare = () => { try { const C = window.Capacitor; if (C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('Share'))) return (o) => C.nativePromise('Share', 'share', o); } catch (e) {} return null; };
+  const openOut = (u) => { const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
+  const copyText = (t, b) => { const ok = () => { if (b) { const o = b.textContent; b.textContent = 'কপি হয়েছে ✓'; setTimeout(() => { b.textContent = o; }, 1800); } }; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok).catch(() => { const x = document.createElement('textarea'); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand('copy'); ok(); } catch (e) {} x.remove(); }); };
+  const shareSheet = (t, title, b) => { const n = nShare(); if (n) return n({ title, text: t, dialogTitle: 'শেয়ার করুন' }).catch((e) => { lg('share-error', (e && e.message) || e); copyText(t, b); }); if (navigator.share) return navigator.share({ title, text: t }).catch(() => {}); copyText(t, b); status('এই ব্রাউজারে শেয়ার নেই — লেখা কপি হয়েছে'); };
+  const shareTo = (how, i, b) => { const t = duaText(i), title = 'দোয়া ' + duas[i].no; lg('share', how, duas[i].no);
+    if (how === 'wa') return openOut('https://wa.me/?text=' + encodeURIComponent(t));
+    if (how === 'tg') return openOut('https://t.me/share/url?url=' + encodeURIComponent(SITE) + '&text=' + encodeURIComponent(t));
+    if (how === 'copy') return copyText(t, b);
+    return shareSheet(t, title, b); };
+  const shareDua = (i, b) => shareTo('all', i, b);
+  const MEANS = () => duas.map((d, i) => i).filter((i) => duas[i].lines.some((L) => L.mn));
+  let meanIdx = 0, meanMode = 'one';
+  const mText = (d) => d.lines.map((L) => L.mn || '').filter(Boolean).join(' ');
+  function drawMean(i, mode) { if (i != null) meanIdx = i; if (mode) meanMode = mode; const M = MEANS(), k = M.indexOf(meanIdx), d = duas[meanIdx];
+    const tabs = '<div class="mtabs"><button type="button" data-mmode="one" aria-pressed="' + (meanMode === 'one') + '">একটা করে</button><button type="button" data-mmode="list" aria-pressed="' + (meanMode === 'list') + '">' + esc(DMETA ? DMETA[1] : '') + '-এর সব অর্থ (' + bn(M.length) + ')</button></div>';
+    if (meanMode === 'list') { $('#meanTitle').textContent = (DMETA ? DMETA[1] + ' · ' + DMETA[2] : '') + ' — সব অর্থ';
+      $('#meanBody').innerHTML = tabs + '<div class="mlist">' + M.map((j) => '<button type="button" class="mli' + (j === meanIdx ? ' cur' : '') + '" data-mpick="' + j + '"><span class="mno">' + esc(duas[j].no) + '</span><span class="mtx">' + esc(mText(duas[j])) + '</span></button>').join('') + '</div>';
+      const c = $('#meanBody .mli.cur'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center' }), 30); return; }
+    $('#meanTitle').textContent = 'দোয়া ' + d.no + ' — পুরো অর্থ';
+    const nav = '<div class="mnav"><button type="button" data-mnav="-1"' + (k <= 0 ? ' disabled' : '') + '>◀ আগের</button><span>' + bn(k + 1) + ' / ' + bn(M.length) + '</span><button type="button" data-mnav="1"' + (k >= M.length - 1 ? ' disabled' : '') + '>পরের ▶</button></div>';
+    $('#meanBody').innerHTML = tabs + nav + '<p class="mfull">' + esc(mText(d)) + '</p>' + (d.ref ? refHtml(d) : '')
+      + '<div class="mshare"><span>শেয়ার (আরবি + উচ্চারণ + অর্থ):</span><div><button type="button" data-sh="wa" class="wa">WhatsApp</button><button type="button" data-sh="tg" class="tg">Telegram</button><button type="button" data-sh="all" class="ms">Messenger / অন্য অ্যাপ</button><button type="button" data-sh="copy">📋 কপি</button></div></div>' + nav; }
   $('#mean').addEventListener('click', (ev) => { if (ev.target.id === 'mean') $('#mean').hidden = true; });
   $('#about').addEventListener('click', (ev) => { if (ev.target.id === 'about') $('#about').hidden = true; });
   function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; const q = d.duas.filter((x) => x.ref && x.ref.t === 'q').length, h = d.duas.filter((x) => x.ref && x.ref.t === 'h').length; const tot = d.duas.filter((x) => /^[০-৯]/.test(x.no)).length; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ<br><span class="mu">উৎস: ' + (q + h ? '📖 ' + bn(q) + ' · 📜 ' + bn(h) + (tot - q - h > 0 ? ' · বাকি ' + bn(tot - q - h) : ' · সব ✓') : 'এখনো যোগ হয়নি') + '</span></td></tr>'; }).join('');
@@ -306,7 +329,7 @@
   function offInfo() { const v = OFF(), el = $('#offInfo'); if (el) el.textContent = (v ? 'এখন: ' + (v > 0 ? 'পরে ' : 'আগে ') + bn(Math.round(Math.abs(v) * 1000)) + ' মি.সে. · ' : '') + 'দোয়ার শুরুতে আগের দোয়ার শেষটুকু শোনা গেলে "পরে" চাপুন; শুরু কেটে গেলে "আগে"।'; }
   offInfo();
   /* APK: ভেতরের লেখা ওয়েবসাইট থেকে আসে (নিজে update)। APK-র নিজের অংশ পুরোনো হলে নতুন APK নেওয়ার বোতাম */
-  const APK_LATEST = 5, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
+  const APK_LATEST = 6, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
   const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
   if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
   render(); loadMedia(); drawDays();
