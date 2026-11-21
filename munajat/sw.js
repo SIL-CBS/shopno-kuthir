@@ -1,4 +1,4 @@
-const C = 'munajat-v49', SHELL = ['./', 'index.html', 'app.js?v=49', 'data.js?v=49', 'manifest.json', 'icon.svg'];
+const C = 'munajat-v50', SHELL = ['./', 'index.html', 'app.js?v=50', 'data.js?v=50', 'manifest.json', 'icon.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(C).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== C).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 const keep = (req, r) => { if (r && (r.ok || r.type === 'opaque')) { const cp = r.clone(); caches.open(C).then((c) => c.put(req, cp)); } return r; };

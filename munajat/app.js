@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 49, APPDATE = '২০ নভেম্বর ২০২৬';
+  const APPVER = 50, APPDATE = '২১ নভেম্বর ২০২৬';
   const CHANGES = [
+    [50, '২১ নভে ২০২৬', ['"অর্থ" পাতায় 🔊 বোতাম — শুধু বাংলা অর্থ পড়ে শোনায়', '"এখান থেকে সব" / "সব অর্থ ক্রমে শুনুন" — একটার পর একটা দোয়ার অর্থ শোনায়, পাতাও সাথে সাথে বদলায়']],
     [49, '২০ নভে ২০২৬', ['"অর্থ" পাতায় সেদিনের সব দোয়ার অর্থের তালিকা — যেকোনোটায় চাপলে একটা করে দেখা', 'একটা করে দেখায় আগের / পরের বোতাম', 'শেয়ার: WhatsApp, Telegram, Messenger / অন্য অ্যাপ, আর কপি']],
     [48, '১৮ নভে ২০২৬', ['অ্যাপে অডিও চালু করলে বন্ধ হয়ে যাওয়া ঠিক করার চেষ্টা — নোটিফিকেশন প্লেয়ার আপাতত সেটিং থেকে চালু করতে হবে (পরীক্ষামূলক)', 'অ্যাপ হঠাৎ বন্ধ হলে কারণ ⓘ-এর লগে আসে']],
     [47, '১৭ নভে ২০২৬', ['নতুন APK (বিল্ড ৪): নিজস্ব আইকন আর শুরুর পর্দা', 'ফোনের নিজস্ব অডিও সার্ভিস — লক স্ক্রিনে বা অ্যাপ পেছনে থাকলেও চলে, নোটিফিকেশনে প্লেয়ার (চালান/থামান/আগে/পরে)']],
@@ -218,11 +219,12 @@
     if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); replan(+k.split(':')[0]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
     if (b.id === 'logCopy') { const t = logText(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'কপি হয়েছে ✓'; }).catch(() => { const r = document.createRange(); r.selectNodeContents($('#logBox')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই করা হলো — কপি করুন'; }); return; }
     if (b.id === 'logClear') { LOG.length = 0; try { localStorage.removeItem(LOGK); } catch (e) {} $('#logBox').textContent = ''; return; }
-    if (ds.mean != null) { drawMean(+ds.mean, 'one'); $('#mean').hidden = false; return; } if (b.id === 'meanClose') { $('#mean').hidden = true; return; }
+    if (ds.mean != null) { drawMean(+ds.mean, 'one'); $('#mean').hidden = false; return; } if (b.id === 'meanClose') { mStop(); $('#mean').hidden = true; return; }
     if (ds.resume != null) { const r = $('#resume'); if (r) r.remove(); if (ds.resume !== 'x') playDua(+ds.resume); return; }
     if (ds.share != null) { shareDua(+ds.share, b); return; }
-    if (ds.sh) { shareTo(ds.sh, meanIdx, b); return; } if (ds.mmode) { drawMean(null, ds.mmode); return; } if (ds.mpick != null) { drawMean(+ds.mpick, 'one'); $('#meanBody').parentNode.scrollTop = 0; return; }
-    if (ds.mnav) { const M = MEANS(), k = M.indexOf(meanIdx) + +ds.mnav; if (M[k] != null) { drawMean(M[k], 'one'); $('#meanBody').parentNode.scrollTop = 0; } return; }
+    if (ds.mspk) { mSay(ds.mspk); return; }
+    if (ds.sh) { shareTo(ds.sh, meanIdx, b); return; } if (ds.mmode) { mStop(); drawMean(null, ds.mmode); return; } if (ds.mpick != null) { mStop(); drawMean(+ds.mpick, 'one'); $('#meanBody').parentNode.scrollTop = 0; return; }
+    if (ds.mnav) { mStop(); const M = MEANS(), k = M.indexOf(meanIdx) + +ds.mnav; if (M[k] != null) { drawMean(M[k], 'one'); $('#meanBody').parentNode.scrollTop = 0; } return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
@@ -241,16 +243,32 @@
   const MEANS = () => duas.map((d, i) => i).filter((i) => duas[i].lines.some((L) => L.mn));
   let meanIdx = 0, meanMode = 'one';
   const mText = (d) => d.lines.map((L) => L.mn || '').filter(Boolean).join(' ');
+  /* অর্থ পাতা: শুধু বাংলা অর্থ পড়ে শোনানো (একটা, অথবা ক্রমে সব) */
+  let mSpk = '', mTok = 0;
+  const speakText = (text) => new Promise((res, rej) => { const rate = +S.ttsRate || 1, n = NTTS();
+    if (n) { const go = (lang) => n.speak({ text, lang, rate, pitch: 1, volume: 1, category: 'playback' }).then(res, rej); return n.isLanguageSupported({ lang: 'bn-BD' }).then((r) => { if (!(r && r.supported)) lg('tts', 'native-no-bn'); go('bn-BD'); }).catch(() => go('bn-BD')); }
+    if (!('speechSynthesis' in window)) return rej(new Error('no-speech'));
+    const v = pickVoice(), u = new SpeechSynthesisUtterance(text); u.lang = (v && v.lang) || 'bn-BD'; if (v) u.voice = v; u.rate = rate; let started = false;
+    u.onstart = () => { started = true; }; u.onend = () => res(); u.onerror = (e) => rej(new Error(e.error || 'speech-error'));
+    try { speechSynthesis.cancel(); } catch (e) {} setTimeout(() => { try { speechSynthesis.speak(u); } catch (e) { rej(e); } }, 60);
+    setTimeout(() => { if (!started && !speechSynthesis.speaking) rej(new Error('no-start')); }, 5000); });
+  const mStop = () => { if (!mSpk) return; mSpk = ''; mTok++; ttsCancel(); };
+  const mSay = (mode) => { if (mSpk) { const was = mSpk; mStop(); drawMean(); if (was === mode) return; } if (wantPlay) toggle(); mSpk = mode; const tok = ++mTok;
+    const run = () => { if (tok !== mTok) return; drawMean(meanIdx, 'one'); const d = duas[meanIdx]; lg('tts', 'mean', d.no, mode);
+      speakText(mText(d)).then(() => { if (tok !== mTok) return; if (mode === 'all') { const M = MEANS(), k = M.indexOf(meanIdx); if (M[k + 1] != null) { meanIdx = M[k + 1]; return setTimeout(run, 700); } } mSpk = ''; drawMean(); })
+        .catch((e) => { if (tok !== mTok) return; lg('tts-error', 'mean', (e && e.message) || e); mSpk = ''; drawMean(); const m = $('#mspkMsg'); if (m) m.textContent = 'বাংলা কণ্ঠ পাওয়া যায়নি — ফোনের Settings → Text-to-speech-এ "Speech Services by Google" আর ভাষা বাংলা দিন'; }); };
+    run(); };
   function drawMean(i, mode) { if (i != null) meanIdx = i; if (mode) meanMode = mode; const M = MEANS(), k = M.indexOf(meanIdx), d = duas[meanIdx];
     const tabs = '<div class="mtabs"><button type="button" data-mmode="one" aria-pressed="' + (meanMode === 'one') + '">একটা করে</button><button type="button" data-mmode="list" aria-pressed="' + (meanMode === 'list') + '">' + esc(DMETA ? DMETA[1] : '') + '-এর সব অর্থ (' + bn(M.length) + ')</button></div>';
     if (meanMode === 'list') { $('#meanTitle').textContent = (DMETA ? DMETA[1] + ' · ' + DMETA[2] : '') + ' — সব অর্থ';
-      $('#meanBody').innerHTML = tabs + '<div class="mlist">' + M.map((j) => '<button type="button" class="mli' + (j === meanIdx ? ' cur' : '') + '" data-mpick="' + j + '"><span class="mno">' + esc(duas[j].no) + '</span><span class="mtx">' + esc(mText(duas[j])) + '</span></button>').join('') + '</div>';
+      $('#meanBody').innerHTML = tabs + '<button type="button" class="mspk" data-mspk="all">🔊 সব অর্থ ক্রমে শুনুন</button><div class="mlist">' + M.map((j) => '<button type="button" class="mli' + (j === meanIdx ? ' cur' : '') + '" data-mpick="' + j + '"><span class="mno">' + esc(duas[j].no) + '</span><span class="mtx">' + esc(mText(duas[j])) + '</span></button>').join('') + '</div>';
       const c = $('#meanBody .mli.cur'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center' }), 30); return; }
     $('#meanTitle').textContent = 'দোয়া ' + d.no + ' — পুরো অর্থ';
     const nav = '<div class="mnav"><button type="button" data-mnav="-1"' + (k <= 0 ? ' disabled' : '') + '>◀ আগের</button><span>' + bn(k + 1) + ' / ' + bn(M.length) + '</span><button type="button" data-mnav="1"' + (k >= M.length - 1 ? ' disabled' : '') + '>পরের ▶</button></div>';
-    $('#meanBody').innerHTML = tabs + nav + '<p class="mfull">' + esc(mText(d)) + '</p>' + (d.ref ? refHtml(d) : '')
+    const spk = '<div class="mspkrow"><button type="button" class="mspk' + (mSpk === 'one' ? ' on' : '') + '" data-mspk="one">' + (mSpk === 'one' ? '⏹ থামান' : '🔊 অর্থ শুনুন') + '</button><button type="button" class="mspk' + (mSpk === 'all' ? ' on' : '') + '" data-mspk="all">' + (mSpk === 'all' ? '⏹ থামান' : '🔊 এখান থেকে সব') + '</button></div><div id="mspkMsg" class="mspkmsg"></div>';
+    $('#meanBody').innerHTML = tabs + nav + spk + '<p class="mfull' + (mSpk ? ' speaking' : '') + '">' + esc(mText(d)) + '</p>' + (d.ref ? refHtml(d) : '')
       + '<div class="mshare"><span>শেয়ার (আরবি + উচ্চারণ + অর্থ):</span><div><button type="button" data-sh="wa" class="wa">WhatsApp</button><button type="button" data-sh="tg" class="tg">Telegram</button><button type="button" data-sh="all" class="ms">Messenger / অন্য অ্যাপ</button><button type="button" data-sh="copy">📋 কপি</button></div></div>' + nav; }
-  $('#mean').addEventListener('click', (ev) => { if (ev.target.id === 'mean') $('#mean').hidden = true; });
+  $('#mean').addEventListener('click', (ev) => { if (ev.target.id === 'mean') { mStop(); $('#mean').hidden = true; } });
   $('#about').addEventListener('click', (ev) => { if (ev.target.id === 'about') $('#about').hidden = true; });
   function drawAbout() { const rows = DATA.days.map((d) => { const dm = DAYS.find((x) => x[0] === d.id) || [d.id, d.id, '']; const q = d.duas.filter((x) => x.ref && x.ref.t === 'q').length, h = d.duas.filter((x) => x.ref && x.ref.t === 'h').length; const tot = d.duas.filter((x) => /^[০-৯]/.test(x.no)).length; return '<tr><td>' + esc(dm[1]) + '</td><td>' + esc(dm[2] || '') + ' · ' + esc(d.range || '') + ' · ' + bn(d.duas.length) + 'টি অংশ<br><span class="mu">উৎস: ' + (q + h ? '📖 ' + bn(q) + ' · 📜 ' + bn(h) + (tot - q - h > 0 ? ' · বাকি ' + bn(tot - q - h) : ' · সব ✓') : 'এখনো যোগ হয়নি') + '</span></td></tr>'; }).join('');
     $('#aboutBody').innerHTML = '<div class="vb"><div><div class="mu">অ্যাপ সংস্করণ</div><b>' + bn(APPVER) + '</b></div><div class="mu">হালনাগাদ: ' + APPDATE + (apkBuild ? ' · APK বিল্ড ' + bn(apkBuild) : '') + '<br>মুনাজাতে মাকবূল · ৭ দিনের দোয়া</div></div>'
