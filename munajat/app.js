@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 52, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 53, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [53, '২৩ নভে ২০২৬', ['রিপিট চলার সময় অন্য লাইনে চাপলে সরাসরি সেই লাইনে যায়, রিপিট আবার ১ হয়ে যায়', 'রিপিট শুধু চলতি লাইনের জন্য — একসাথে একটা লাইনেই থাকে, অন্য দোয়ায় গেলে মুছে যায়']],
     [52, '২৩ নভে ২০২৬', ['নিচের 🔁 বোতাম এখন রিপিট: যে লাইন চলছে সেটা ১ → ২ → ৩ → ৫ → ৭ → ১০ বার, তারপর আবার ১', 'রিপিট শেষ হলে পরের লাইনে যায় — "পুরো দোয়া" মোডেও কাজ করে']],
     [51, '২৩ নভে ২০২৬', ['বড় প্লেয়ার সরিয়ে নিচে ছোট প্লেয়ার বার — আগে, চালান, পরে, বন্ধ, দোয়া শেষে কী হবে, সেটিং', 'উপরের অংশ ছোট হলো, দোয়া পড়ার জায়গা বড়']],
     [50, '২১ নভে ২০২৬', ['"অর্থ" পাতায় 🔊 বোতাম — শুধু বাংলা অর্থ পড়ে শোনায়', '"এখান থেকে সব" / "সব অর্থ ক্রমে শুনুন" — একটার পর একটা দোয়ার অর্থ শোনায়, পাতাও সাথে সাথে বদলায়']],
@@ -85,7 +86,8 @@
   addEventListener('pagehide', () => lg('pagehide')); addEventListener('freeze', () => lg('freeze')); addEventListener('resume', () => lg('resume')); let plan = null, timer = null, wantPlay = false;
   /* প্রতি লাইন কতবার (লাইন ধরে মোডে) — না দিলে সেটিংসের "কতবার" */
   const LSTEPS = [0, 1, 2, 3, 4, 5, 7, 10];
-  const lreps = (i, j) => { const v = S.lrep && S.lrep[i + ':' + j]; return v ? v : S.reps; };
+  let TR = {}; // নিচের 🔁 বোতামের সাময়িক রিপিট — অন্য লাইনে চাপলে মুছে যায়
+  const lreps = (i, j) => { const t = TR[i + ':' + j]; if (t) return t; const v = S.lrep && S.lrep[i + ':' + j]; return v ? v : S.reps; };
   const lrepBtn = (i, j) => { const v = S.lrep && S.lrep[i + ':' + j]; return '<button type="button" class="lrep' + (v ? ' set' : '') + '" data-lrep="' + i + ':' + j + '" aria-label="এই লাইন কতবার">×' + bn(v || S.reps) + '</button>'; };
   /* বাজানো চলার মাঝে কোনো লাইনের "কতবার" বদলালে বাকি পরিকল্পনা নতুন করে — এখনকার লাইন থেকেই চলবে */
   const replan = (i) => { if (!plan || !plan.items.length || plan.items[0].i !== i) return; const cur = plan.items[plan.k]; const items = buildPlan(i); let k = cur ? items.findIndex((x) => x.j === cur.j && x.whole === cur.whole && x.rep === Math.min(cur.rep, x.of)) : -1; if (k < 0 && cur) k = items.findIndex((x) => x.j === cur.j); plan = {items, k: Math.max(0, k)}; status(); };
@@ -133,10 +135,10 @@
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
     else if (S.mode === 'hifz') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j); out.push({i, j, s, e, rep: 1, of: 1, wait: true}); }); }
-    else if (d.lines.some((_, j) => (S.lrep && S.lrep[i + ':' + j] || 1) > 1)) { for (let r = 1; r <= S.reps; r++) d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = (S.lrep && S.lrep[i + ':' + j]) || 1; for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }); }
+    else if (d.lines.some((_, j) => (TR[i + ':' + j] || 1) > 1)) { for (let r = 1; r <= S.reps; r++) d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = TR[i + ':' + j] || 1; for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
-  const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
+  const playDua = (i, fromLine) => { if (i !== S.dua) TR = {}; S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
   const startItem = () => { clearTimeout(timer); pend = null; const it = plan && plan.items[plan.k]; if (!it) return finishDua(); if (it.tts != null) return speakItem(it); wantPlay = true; media.playbackRate = S.speed; const x = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); status(); meta(it);
     /* পর্দা খোলা: চুপ করে একটু আগে থেকে চালু, ঠিক শুরুতে আওয়াজ — যাতে আগের অংশের কোনো টুকরো (ফোনের বাফার) না বাজে।
        পর্দা বন্ধ/পেছনে: থামানো ছাড়াই সরাসরি লাফ, যাতে লক স্ক্রিনে প্লেয়ার বন্ধ না হয়। */
@@ -188,7 +190,7 @@
   try { if (!localStorage.getItem('mm_vid_off1')) { S.video = false; localStorage.setItem('mm_vid_off1', '1'); } if (!localStorage.getItem('mm_ar_on1')) { S.hideAr = false; localStorage.setItem('mm_ar_on1', '1'); } } catch (e) {}
   const RSTEPS = [1, 2, 3, 5, 7, 10];
   const drawRpt = () => { const b = $('#rptBtn'); if (!b) return; const it = plan && plan.items[plan.k]; let n = 1;
-    if (it && S.mode !== 'hifz') { let j = it.j; if (j == null) { const t = media.currentTime - OFF(); j = duas[it.i].lines.findIndex((L, x) => t < lineSpan(it.i, x)[1]); } if (j >= 0) n = (S.lrep && S.lrep[it.i + ':' + j]) || (S.mode === 'line' ? lreps(it.i, j) : 1); }
+    if (it && S.mode !== 'hifz') { let j = it.j; if (j == null) { const t = media.currentTime - OFF(); j = duas[it.i].lines.findIndex((L, x) => t < lineSpan(it.i, x)[1]); } if (j >= 0) n = S.mode === 'line' ? lreps(it.i, j) : (TR[it.i + ':' + j] || 1); }
     b.querySelector('small').textContent = n > 1 ? bn(n) : ''; b.style.opacity = n > 1 ? '1' : '.65'; };
   const drawAfter = () => { const b = $('#afterBtn'); if (!b) return; const a = S.after || 'next';
     b.innerHTML = (a === 'stop' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h11M13 8l4 4-4 4M20 5v14"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>') + (a === 'loop' ? '<small>১</small>' : '');
@@ -239,7 +241,7 @@
     if (b.id === 'stopBtn') { mStop(); stop(); return; }
     if (b.id === 'rptBtn') { const it = plan && plan.items[plan.k]; if (!it || S.mode === 'hifz') { status('দোয়া চলার সময় চাপুন — যে লাইন চলছে সেটা কতবার হবে ঠিক করে'); return; }
       const i = it.i; let j = it.j; if (j == null) { const t = media.currentTime - OFF(); j = duas[i].lines.findIndex((L, x) => t < lineSpan(i, x)[1]); if (j < 0) j = duas[i].lines.length - 1; }
-      if (!S.lrep) S.lrep = {}; const key = i + ':' + j, LM = S.mode === 'line', cur = LM ? lreps(i, j) : (S.lrep[key] || 1), ci = RSTEPS.indexOf(cur), n = ci < 0 ? (RSTEPS.find((x) => x > cur) || 1) : RSTEPS[(ci + 1) % RSTEPS.length]; if (n > 1 || LM) S.lrep[key] = n; else delete S.lrep[key]; save();
+      if (!S.lrep) S.lrep = {}; const key = i + ':' + j, LM = S.mode === 'line', cur = LM ? lreps(i, j) : (TR[key] || 1), ci = RSTEPS.indexOf(cur), n = ci < 0 ? (RSTEPS.find((x) => x > cur) || 1) : RSTEPS[(ci + 1) % RSTEPS.length]; TR = {}; if (n > 1 || LM) TR[key] = n;
       const dr = it.dr || it.rep || 1, items = buildPlan(i); let k = items.findIndex((x) => x.j === j && (x.dr || 1) === (S.mode === 'line' ? 1 : Math.min(dr, S.reps)) && x.rep === (it.j === j ? Math.min(it.rep, x.of) : 1));
       if (k < 0) k = items.findIndex((x) => x.j === j); if (k < 0) k = items.findIndex((x) => x.j == null); plan = {items, k: Math.max(0, k)}; try { sched(); } catch (e) {}
       lg('rpt', duas[i].no, 'line', j + 1, n); status('দোয়া ' + duas[i].no + ' · লাইন ' + bn(j + 1) + ': ' + (n > 1 ? bn(n) + ' বার' : 'একবার (রিপিট নেই)')); drawRpt(); render(); return; }
@@ -304,7 +306,7 @@
     getMedia(DAYKEY).then((b) => { const el = $('#abFile'); if (el) el.textContent = b ? (b.name || '(নাম নেই)') + ' · ' + (b.type || 'ধরন অজানা') + ' · ' + bn((b.size / 1048576).toFixed(1)) + ' MB · ' + (hasVideo ? 'ভিডিও আছে ⚠' : 'শুধু অডিও ✓') + ' · দৈর্ঘ্য ' + bn((media.duration || 0).toFixed(1)) + ' সে. (হওয়ার কথা ' + bn(day.dur) + ')' : 'ফাইল দেওয়া হয়নি'; }).catch(() => {}); }
   function logText() { return 'v' + APPVER + ' · ' + DAYID + ' · ' + navigator.userAgent + '\n' + LOG.join('\n'); }
   $('#sheet').addEventListener('click', (ev) => { if (ev.target.id === 'sheet') $('#sheet').hidden = true; });
-  document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; if (S.mode !== 'dua') playDua(S.dua, j); else { const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); } });
+  document.addEventListener('click', (ev) => { const l = ev.target.closest('.ln'); if (!l || ev.target.closest('button')) return; const j = +l.dataset.line; if (!media.src) return; const had = Object.keys(TR).length; TR = {}; if (had) lg('rpt', 'reset-by-line-tap'); if (S.mode !== 'dua') return playDua(S.dua, j); if (had || (plan && plan.items.some((x) => x.j != null))) { plan = {items: buildPlan(S.dua), k: 0}; wantPlay = true; media.currentTime = Math.max(0, lineSpan(S.dua, j)[0] + OFF() - LEAD); const pp = media.play(); if (pp && pp.catch) pp.catch(() => {}); try { sched(); } catch (e) {} status(); render(); return; } const [s] = lineSpan(S.dua, j); if (!plan) playDua(S.dua); media.currentTime = Math.max(0, s - LEAD); });
   $('#file').addEventListener('change', async (ev) => { const f = ev.target.files[0]; if (!f) return; $('#fileMsg').textContent = 'রাখা হচ্ছে…'; try { await putMedia(DAYKEY, f); if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); await loadMedia(); } catch (e) { $('#fileMsg').textContent = 'রাখা যায়নি: ' + e.message; } });
   /* ফাইলে ভিডিও থাকলে Android-এর Chrome পর্দা বন্ধ হলেই থামিয়ে দেয় — তাই ধরা পড়লে লাল সতর্কতা */
   let hasVideo = false;
