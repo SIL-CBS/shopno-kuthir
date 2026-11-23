@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 51, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 52, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [52, '২৩ নভে ২০২৬', ['নিচের 🔁 বোতাম এখন রিপিট: যে লাইন চলছে সেটা ১ → ২ → ৩ → ৫ → ৭ → ১০ বার, তারপর আবার ১', 'রিপিট শেষ হলে পরের লাইনে যায় — "পুরো দোয়া" মোডেও কাজ করে']],
     [51, '২৩ নভে ২০২৬', ['বড় প্লেয়ার সরিয়ে নিচে ছোট প্লেয়ার বার — আগে, চালান, পরে, বন্ধ, দোয়া শেষে কী হবে, সেটিং', 'উপরের অংশ ছোট হলো, দোয়া পড়ার জায়গা বড়']],
     [50, '২১ নভে ২০২৬', ['"অর্থ" পাতায় 🔊 বোতাম — শুধু বাংলা অর্থ পড়ে শোনায়', '"এখান থেকে সব" / "সব অর্থ ক্রমে শুনুন" — একটার পর একটা দোয়ার অর্থ শোনায়, পাতাও সাথে সাথে বদলায়']],
     [49, '২০ নভে ২০২৬', ['"অর্থ" পাতায় সেদিনের সব দোয়ার অর্থের তালিকা — যেকোনোটায় চাপলে একটা করে দেখা', 'একটা করে দেখায় আগের / পরের বোতাম', 'শেয়ার: WhatsApp, Telegram, Messenger / অন্য অ্যাপ, আর কপি']],
@@ -132,6 +133,7 @@
     if (S.mode === 'line') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = lreps(i, j); for (let r = 1; r <= n; r++) out.push({i, j, s, e, rep: r, of: n}); });
       const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) out.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); }
     else if (S.mode === 'hifz') { d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j); out.push({i, j, s, e, rep: 1, of: 1, wait: true}); }); }
+    else if (d.lines.some((_, j) => (S.lrep && S.lrep[i + ':' + j] || 1) > 1)) { for (let r = 1; r <= S.reps; r++) d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = (S.lrep && S.lrep[i + ':' + j]) || 1; for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
   const playDua = (i, fromLine) => { S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
@@ -178,16 +180,20 @@
   const highlight = (t, it) => { let hi = -1, hj = -1; if (t == null && it) { hi = it.i; hj = it.j; } else if (t != null) { const tt = t + 0.05; duas.forEach((d, i) => d.lines.forEach((L, j) => { const [s, e] = lineSpan(i, j); if (tt >= s && tt < e) { hi = i; hj = j; } })); }
     const k = hi + ':' + hj; if (k === lastHL) return; lastHL = k; $$('.ln.on').forEach((e) => e.classList.remove('on'));
     const el = $('#l-' + hi + '-' + hj); if (el) { el.classList.add('on'); if (wantPlay) el.scrollIntoView({block: 'center', behavior: 'smooth'}); } };
-  const renderBar = () => { nmsSync(plan && plan.items[plan.k]); const b = $('#play'); if (b) { const on = plan && wantPlay && !media.paused; b.setAttribute('aria-label', on ? 'থামান' : 'চালান'); b.innerHTML = on ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; } };
+  const renderBar = () => { try { drawRpt(); } catch (e) {} nmsSync(plan && plan.items[plan.k]); const b = $('#play'); if (b) { const on = plan && wantPlay && !media.paused; b.setAttribute('aria-label', on ? 'থামান' : 'চালান'); b.innerHTML = on ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; } };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
   const renderPick = () => { const n = S.sel.length;
     $('#pickInfo').textContent = n ? bn(n) + 'টি দোয়া বাছাই — শুধু এগুলোই বাজবে' : 'কিছু বাছাই নেই — সব দোয়া ক্রমে বাজবে';
     $('#pickAll').setAttribute('aria-pressed', String(n === duas.length)); $('#pickNone').disabled = !n; };
   try { if (!localStorage.getItem('mm_vid_off1')) { S.video = false; localStorage.setItem('mm_vid_off1', '1'); } if (!localStorage.getItem('mm_ar_on1')) { S.hideAr = false; localStorage.setItem('mm_ar_on1', '1'); } } catch (e) {}
+  const RSTEPS = [1, 2, 3, 5, 7, 10];
+  const drawRpt = () => { const b = $('#rptBtn'); if (!b) return; const it = plan && plan.items[plan.k]; let n = 1;
+    if (it && S.mode !== 'hifz') { let j = it.j; if (j == null) { const t = media.currentTime - OFF(); j = duas[it.i].lines.findIndex((L, x) => t < lineSpan(it.i, x)[1]); } if (j >= 0) n = (S.lrep && S.lrep[it.i + ':' + j]) || (S.mode === 'line' ? lreps(it.i, j) : 1); }
+    b.querySelector('small').textContent = n > 1 ? bn(n) : ''; b.style.opacity = n > 1 ? '1' : '.65'; };
   const drawAfter = () => { const b = $('#afterBtn'); if (!b) return; const a = S.after || 'next';
     b.innerHTML = (a === 'stop' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h11M13 8l4 4-4 4M20 5v14"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>') + (a === 'loop' ? '<small>১</small>' : '');
     b.setAttribute('aria-label', a === 'next' ? 'দোয়া শেষে: পরেরটা' : a === 'loop' ? 'দোয়া শেষে: এটাই আবার' : 'দোয়া শেষে: থামবে'); b.style.opacity = a === 'next' ? '.65' : '1'; };
-  const render = () => { applyLook(); drawAfter(); document.body.classList.toggle('m-line', S.mode === 'line');
+  const render = () => { applyLook(); drawAfter(); drawRpt(); document.body.classList.toggle('m-line', S.mode === 'line');
     document.documentElement.style.setProperty('--ar', S.font + 'px');
     document.body.classList.toggle('no-bn', !S.showBn); document.body.classList.toggle('show-mn', S.showMeaning); document.body.classList.toggle('hide-ar', S.hideAr); document.body.classList.toggle('no-video', !S.video);
     $$('[data-tg]').forEach((b) => b.setAttribute('aria-pressed', String(!!S[b.dataset.tg])));
@@ -231,7 +237,12 @@
     if (ds.mnav) { mStop(); const M = MEANS(), k = M.indexOf(meanIdx) + +ds.mnav; if (M[k] != null) { drawMean(M[k], 'one'); $('#meanBody').parentNode.scrollTop = 0; } return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
     if (b.id === 'stopBtn') { mStop(); stop(); return; }
-    if (b.id === 'afterBtn') { const o = ['next', 'loop', 'stop'], n = o[(o.indexOf(S.after) + 1) % 3]; S.after = n; save(); render(); status(n === 'next' ? 'দোয়া শেষে: তালিকার পরেরটা' : n === 'loop' ? 'দোয়া শেষে: এটাই আবার' : 'দোয়া শেষে: থামবে'); return; }
+    if (b.id === 'rptBtn') { const it = plan && plan.items[plan.k]; if (!it || S.mode === 'hifz') { status('দোয়া চলার সময় চাপুন — যে লাইন চলছে সেটা কতবার হবে ঠিক করে'); return; }
+      const i = it.i; let j = it.j; if (j == null) { const t = media.currentTime - OFF(); j = duas[i].lines.findIndex((L, x) => t < lineSpan(i, x)[1]); if (j < 0) j = duas[i].lines.length - 1; }
+      if (!S.lrep) S.lrep = {}; const key = i + ':' + j, LM = S.mode === 'line', cur = LM ? lreps(i, j) : (S.lrep[key] || 1), ci = RSTEPS.indexOf(cur), n = ci < 0 ? (RSTEPS.find((x) => x > cur) || 1) : RSTEPS[(ci + 1) % RSTEPS.length]; if (n > 1 || LM) S.lrep[key] = n; else delete S.lrep[key]; save();
+      const dr = it.dr || it.rep || 1, items = buildPlan(i); let k = items.findIndex((x) => x.j === j && (x.dr || 1) === (S.mode === 'line' ? 1 : Math.min(dr, S.reps)) && x.rep === (it.j === j ? Math.min(it.rep, x.of) : 1));
+      if (k < 0) k = items.findIndex((x) => x.j === j); if (k < 0) k = items.findIndex((x) => x.j == null); plan = {items, k: Math.max(0, k)}; try { sched(); } catch (e) {}
+      lg('rpt', duas[i].no, 'line', j + 1, n); status('দোয়া ' + duas[i].no + ' · লাইন ' + bn(j + 1) + ': ' + (n > 1 ? bn(n) + ' বার' : 'একবার (রিপিট নেই)')); drawRpt(); render(); return; }
     if (b.id === 'sheetBtn2') { $('#sheet').hidden = false; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
