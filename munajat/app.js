@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 54, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 55, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [55, '২৩ নভে ২০২৬', ['লাইন বাছাই থাকলে ▶ চাপলে প্রথম বাছাই করা লাইন থেকে শুরু হয়; বাছাই না থাকলে দোয়ার শুরু থেকে']],
     [54, '২৩ নভে ২০২৬', ['খোলা দোয়ার প্রতিটা লাইনে ☐ বাছাই', 'কয়েকটা লাইন বেছে নিচের 🔁 চাপলে সেই দল একসাথে ১/২/৩/৫/৭/১০ বার রিপিট হয়, তারপর পরের লাইনে যায়', '"বাছাই মুছুন" দিয়ে দল তুলে দেওয়া যায়; অন্য দোয়ায় গেলে নিজে মুছে যায়']],
     [53, '২৩ নভে ২০২৬', ['রিপিট চলার সময় অন্য লাইনে চাপলে সরাসরি সেই লাইনে যায়, রিপিট আবার ১ হয়ে যায়', 'রিপিট শুধু চলতি লাইনের জন্য — একসাথে একটা লাইনেই থাকে, অন্য দোয়ায় গেলে মুছে যায়']],
     [52, '২৩ নভে ২০২৬', ['নিচের 🔁 বোতাম এখন রিপিট: যে লাইন চলছে সেটা ১ → ২ → ৩ → ৫ → ৭ → ১০ বার, তারপর আবার ১', 'রিপিট শেষ হলে পরের লাইনে যায় — "পুরো দোয়া" মোডেও কাজ করে']],
@@ -134,7 +135,7 @@
       else { o.push(it); const nx = base[k + 1]; if (!nx || nx.j !== it.j) o.push({i, j: it.j, tts: mn(it.j), rep: 1, of: 1}); } }); return o; };
   const buildPlan = (i) => withTts(i, buildPlan0(i));
   window.__mmPlan = () => plan && plan.items.map((x) => (x.j == null ? 'W' : x.j + 1) + (x.grp ? 'g' : '') + x.rep + '/' + x.of).join(' ') + ' @' + plan.k;
-  const grpOn = (i) => i === S.dua && LS.length > 0 && GR > 1 && S.mode !== 'hifz';
+  const grpOn = (i) => i === S.dua && LS.length > 0 && S.mode !== 'hifz';
   const withGroup = (i, perLine) => { const out = [], d = duas[i], G = LS.slice().sort((a, b) => a - b); d.lines.forEach((_, j) => { if (G.includes(j)) { if (j !== G[0]) return; for (let q = 1; q <= GR; q++) G.forEach((g) => { const [s, e] = lineSpan(i, g); out.push({i, j: g, s, e, rep: q, of: GR, grp: true}); }); } else perLine(j, out); }); return out; };
   const buildPlan0 = (i) => { if (grpOn(i)) { const g = []; const R = S.mode === 'line' ? 1 : S.reps; for (let r = 1; r <= R; r++) withGroup(i, (j, out) => { const [s, e] = lineSpan(i, j), n = S.mode === 'line' ? lreps(i, j) : (TR[i + ':' + j] || 1); for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }).forEach((x) => g.push(Object.assign(x, {dr: x.dr || r}))); if (S.mode === 'line') { const [s, e] = duaSpan(i); for (let r = 1; r <= S.whole; r++) g.push({i, j: null, s, e, rep: r, of: S.whole, whole: true}); } return g; }
     const out = [], d = duas[i];
@@ -144,7 +145,7 @@
     else if (d.lines.some((_, j) => (TR[i + ':' + j] || 1) > 1)) { for (let r = 1; r <= S.reps; r++) d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = TR[i + ':' + j] || 1; for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
-  const playDua = (i, fromLine) => { if (i !== S.dua) { TR = {}; LS = []; GR = 1; } S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
+  const playDua = (i, fromLine) => { if (i !== S.dua) { TR = {}; LS = []; GR = 1; } S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine == null && grpOn(i)) { const g0 = Math.min(...LS), k = plan.items.findIndex((x) => x.j === g0); if (k >= 0) plan.k = k; } if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
   const startItem = () => { clearTimeout(timer); pend = null; const it = plan && plan.items[plan.k]; if (!it) return finishDua(); if (it.tts != null) return speakItem(it); wantPlay = true; media.playbackRate = S.speed; const x = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); status(); meta(it);
     /* পর্দা খোলা: চুপ করে একটু আগে থেকে চালু, ঠিক শুরুতে আওয়াজ — যাতে আগের অংশের কোনো টুকরো (ফোনের বাফার) না বাজে।
        পর্দা বন্ধ/পেছনে: থামানো ছাড়াই সরাসরি লাফ, যাতে লক স্ক্রিনে প্লেয়ার বন্ধ না হয়। */
