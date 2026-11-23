@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 58, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 59, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [59, '২৩ নভে ২০২৬', ['⏮ একবার চাপলে চলতি লাইন শুরু থেকে; দ্রুত দুবার চাপলে আগের লাইনে (প্রথম লাইনে থাকলে আগের দোয়া/আয়াতে)']],
     [58, '২৩ নভে ২০২৬', ['সূরা আল-কাহফ: আয়াত এখন দোয়ার লাইনের মতো ছোট ছোট লাইনে ভাঙা (৩২০ লাইন) — প্রতিটা লাইন আলাদা বাছাই ও রিপিট করা যায়']],
     [57, '২৩ নভে ২০২৬', ['সূরা আল-কাহফ: এখন প্রতিটা আয়াত আলাদা কার্ড, আয়াত নম্বরসহ', 'বড় আয়াত কয়েক লাইনে ভাঙা (ওয়াকফ চিহ্ন ধরে) — দোয়ার লাইনের মতোই বাছাই আর রিপিট', 'অর্থ আয়াতের শেষ লাইনে; "অর্থ" বোতামে পুরো আয়াতের অর্থ']],
     [56, '২৩ নভে ২০২৬', ['নতুন অংশ "সূরা": সূরা আল-কাহফ — ১২ রুকু, প্রতিটা আয়াত এক লাইন; দোয়ার মতোই বাছাই, রিপিট, অর্থ, শেয়ার', 'সূরার অডিও "ফাইল দিন" দিয়ে দিন; আয়াতের সময় আপাতত আনুমানিক']],
@@ -91,6 +92,7 @@
   addEventListener('pagehide', () => lg('pagehide')); addEventListener('freeze', () => lg('freeze')); addEventListener('resume', () => lg('resume')); let plan = null, timer = null, wantPlay = false;
   /* প্রতি লাইন কতবার (লাইন ধরে মোডে) — না দিলে সেটিংসের "কতবার" */
   const LSTEPS = [0, 1, 2, 3, 4, 5, 7, 10];
+  let lastPrev = 0;
   let LS = [], GR = 1; // বাছাই করা লাইন (চলতি দোয়ার) আর সেই দলের রিপিট
   let TR = {}; // নিচের 🔁 বোতামের সাময়িক রিপিট — অন্য লাইনে চাপলে মুছে যায়
   const lreps = (i, j) => { const t = TR[i + ':' + j]; if (t) return t; const v = S.lrep && S.lrep[i + ':' + j]; return v ? v : S.reps; };
@@ -240,7 +242,14 @@
     if (ds.step) { const [k, dv] = ds.step.split(':'), lim = {reps: [1, 33], gap: [0, 30], whole: [0, 11]}[k]; S[k] = Math.min(lim[1], Math.max(lim[0], S[k] + +dv)); save(); render(); return; }
     if (ds.nudge) { const [i, w, dv] = ds.nudge.split(':'), n = (S.nudge[i] = S.nudge[i] || [0, 0]); n[+w] = Math.round((n[+w] + +dv) * 100) / 100; save(); render(); const [s, e] = duaSpan(+i); if (media.src) media.currentTime = +w === 0 ? s : Math.max(s, e - 3); return; }
     if (b.id === 'play') return toggle();
-    if (b.id === 'prev') { const n = nextInQueue(S.dua, -1); return playDua(n == null ? S.dua : n); }
+    if (b.id === 'prev') { const now = Date.now(), dbl = now - lastPrev < 1500; lastPrev = now; const it = plan && plan.items[plan.k];
+      if (!it || it.tts != null) { const n = nextInQueue(S.dua, -1); return playDua(n == null ? S.dua : n); }
+      const i = it.i, t = media.currentTime - OFF(); let j = it.j; if (j == null) { j = duas[i].lines.findIndex((L, x) => t < lineSpan(i, x)[1]); if (j < 0) j = duas[i].lines.length - 1; }
+      const tj = dbl ? j - 1 : j; lg('prev', dbl ? 'line-back' : 'line-restart', duas[i].no, tj + 1);
+      if (tj < 0) { const n = nextInQueue(S.dua, -1); return playDua(n == null ? S.dua : n); }
+      if (it.j == null) { wantPlay = true; media.currentTime = Math.max(0, lineSpan(i, tj)[0] + OFF() - LEAD); const pp = media.play(); if (pp && pp.catch) pp.catch(() => {}); try { sched(); } catch (e) {} status(); highlight(null, {i, j: tj}); return; }
+      let k = plan.k; if (dbl) { k = -1; for (let x = plan.k - 1; x >= 0; x--) if (plan.items[x].j === tj) { k = x; break; } if (k < 0) k = plan.items.findIndex((x) => x.j === tj); while (k > 0 && plan.items[k - 1].j === tj && !plan.items[k].grp) k--; }
+      if (k < 0) k = plan.k; plan.k = k; startItem(); return; }
     if (b.id === 'next') { const n = nextInQueue(S.dua, 1); return n == null ? stop() : playDua(n); }
     if (ds.lrep) { if (!S.lrep) S.lrep = {}; const k = ds.lrep, cur = S.lrep[k] || 0, n = LSTEPS[(LSTEPS.indexOf(cur) + 1) % LSTEPS.length]; if (n) S.lrep[k] = n; else delete S.lrep[k]; save(); b.outerHTML = lrepBtn(+k.split(':')[0], +k.split(':')[1]); replan(+k.split(':')[0]); if (S.mode !== 'line') status('প্রতি লাইনের "কতবার" কাজ করে "লাইন ধরে" মোডে'); return; }
     if (b.id === 'logCopy') { const t = logText(); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { b.textContent = 'কপি হয়েছে ✓'; }).catch(() => { const r = document.createRange(); r.selectNodeContents($('#logBox')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই করা হলো — কপি করুন'; }); return; }
