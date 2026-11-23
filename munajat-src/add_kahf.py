@@ -16,23 +16,24 @@ BIS = NORM(BIS0)
 units = [('বিসমিল্লাহ', [dict(ar=BIS, bn='Bismillahi alrrahmani alrraheemi', mn='পরম করুণাময়, অসীম দয়ালু আল্লাহর নামে।', w=w(BIS))], None)]
 WAQF = set('ۖۗۘۙۚۛۜ')
 LET = lambda t: len(DIAC.sub('', t).replace(' ', ''))
-def pieces(words):
-    """Split an ayat (list of words) into lines: at waqf marks first, then long runs into ~8-word chunks."""
-    if LET(' '.join(words)) <= 75: return [words]
+def pieces(words, target=20):
+    """Break an ayat into short lines like the dua lines: waqf marks first, then ~target letters per line."""
     segs, cur = [], []
     for wd in words:
         cur.append(wd)
-        if any(c in WAQF for c in wd) and LET(' '.join(cur)) >= 25: segs.append(cur); cur = []
-    if cur:
-        if segs and LET(' '.join(cur)) < 20: segs[-1] += cur
-        else: segs.append(cur)
+        if any(c in WAQF for c in wd): segs.append(cur); cur = []
+    if cur: segs.append(cur)
     out = []
     for sg in segs:
-        n = LET(' '.join(sg))
-        if n <= 85: out.append(sg); continue
-        k = -(-n // 70); size = -(-len(sg) // k)
+        n = LET(' '.join(sg)); k = max(1, -(-n // 26)); size = -(-len(sg) // k)
         out += [sg[i:i + size] for i in range(0, len(sg), size)]
-    if len(out) > 1 and LET(' '.join(out[-1])) < 15: out[-2] += out.pop()
+    i = 0
+    while i < len(out):  # fold very short bits into a neighbour
+        if len(out) > 1 and LET(' '.join(out[i])) < 12:
+            if i == 0: out[1] = out[0] + out[1]
+            else: out[i - 1] += out[i]
+            out.pop(i); continue
+        i += 1
     return out
 for v in V:
     ar = NORM(v['text']); aw = ar.split(' '); tw = v['transliteration'].split(' ')
