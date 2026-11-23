@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 50, APPDATE = '২১ নভেম্বর ২০২৬';
+  const APPVER = 51, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [51, '২৩ নভে ২০২৬', ['বড় প্লেয়ার সরিয়ে নিচে ছোট প্লেয়ার বার — আগে, চালান, পরে, বন্ধ, দোয়া শেষে কী হবে, সেটিং', 'উপরের অংশ ছোট হলো, দোয়া পড়ার জায়গা বড়']],
     [50, '২১ নভে ২০২৬', ['"অর্থ" পাতায় 🔊 বোতাম — শুধু বাংলা অর্থ পড়ে শোনায়', '"এখান থেকে সব" / "সব অর্থ ক্রমে শুনুন" — একটার পর একটা দোয়ার অর্থ শোনায়, পাতাও সাথে সাথে বদলায়']],
     [49, '২০ নভে ২০২৬', ['"অর্থ" পাতায় সেদিনের সব দোয়ার অর্থের তালিকা — যেকোনোটায় চাপলে একটা করে দেখা', 'একটা করে দেখায় আগের / পরের বোতাম', 'শেয়ার: WhatsApp, Telegram, Messenger / অন্য অ্যাপ, আর কপি']],
     [48, '১৮ নভে ২০২৬', ['অ্যাপে অডিও চালু করলে বন্ধ হয়ে যাওয়া ঠিক করার চেষ্টা — নোটিফিকেশন প্লেয়ার আপাতত সেটিং থেকে চালু করতে হবে (পরীক্ষামূলক)', 'অ্যাপ হঠাৎ বন্ধ হলে কারণ ⓘ-এর লগে আসে']],
@@ -183,7 +184,10 @@
     $('#pickInfo').textContent = n ? bn(n) + 'টি দোয়া বাছাই — শুধু এগুলোই বাজবে' : 'কিছু বাছাই নেই — সব দোয়া ক্রমে বাজবে';
     $('#pickAll').setAttribute('aria-pressed', String(n === duas.length)); $('#pickNone').disabled = !n; };
   try { if (!localStorage.getItem('mm_vid_off1')) { S.video = false; localStorage.setItem('mm_vid_off1', '1'); } if (!localStorage.getItem('mm_ar_on1')) { S.hideAr = false; localStorage.setItem('mm_ar_on1', '1'); } } catch (e) {}
-  const render = () => { applyLook(); document.body.classList.toggle('m-line', S.mode === 'line');
+  const drawAfter = () => { const b = $('#afterBtn'); if (!b) return; const a = S.after || 'next';
+    b.innerHTML = (a === 'stop' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h11M13 8l4 4-4 4M20 5v14"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg>') + (a === 'loop' ? '<small>১</small>' : '');
+    b.setAttribute('aria-label', a === 'next' ? 'দোয়া শেষে: পরেরটা' : a === 'loop' ? 'দোয়া শেষে: এটাই আবার' : 'দোয়া শেষে: থামবে'); b.style.opacity = a === 'next' ? '.65' : '1'; };
+  const render = () => { applyLook(); drawAfter(); document.body.classList.toggle('m-line', S.mode === 'line');
     document.documentElement.style.setProperty('--ar', S.font + 'px');
     document.body.classList.toggle('no-bn', !S.showBn); document.body.classList.toggle('show-mn', S.showMeaning); document.body.classList.toggle('hide-ar', S.hideAr); document.body.classList.toggle('no-video', !S.video);
     $$('[data-tg]').forEach((b) => b.setAttribute('aria-pressed', String(!!S[b.dataset.tg])));
@@ -226,6 +230,9 @@
     if (ds.sh) { shareTo(ds.sh, meanIdx, b); return; } if (ds.mmode) { mStop(); drawMean(null, ds.mmode); return; } if (ds.mpick != null) { mStop(); drawMean(+ds.mpick, 'one'); $('#meanBody').parentNode.scrollTop = 0; return; }
     if (ds.mnav) { mStop(); const M = MEANS(), k = M.indexOf(meanIdx) + +ds.mnav; if (M[k] != null) { drawMean(M[k], 'one'); $('#meanBody').parentNode.scrollTop = 0; } return; }
     if (b.id === 'aboutBtn') { drawAbout(); $('#about').hidden = false; return; } if (b.id === 'aboutClose') { $('#about').hidden = true; return; }
+    if (b.id === 'stopBtn') { mStop(); stop(); return; }
+    if (b.id === 'afterBtn') { const o = ['next', 'loop', 'stop'], n = o[(o.indexOf(S.after) + 1) % 3]; S.after = n; save(); render(); status(n === 'next' ? 'দোয়া শেষে: তালিকার পরেরটা' : n === 'loop' ? 'দোয়া শেষে: এটাই আবার' : 'দোয়া শেষে: থামবে'); return; }
+    if (b.id === 'sheetBtn2') { $('#sheet').hidden = false; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
   const duaText = (i) => { const d = duas[i], r = d.ref; return 'দোয়া ' + d.no + ' — ' + day.title + '\n\n' + d.lines.map((L) => L.ar + (L.bn ? '\n' + L.bn : '') + (L.mn ? '\n' + L.mn : '')).join('\n\n') + (r ? '\n\nউৎস: ' + r.txt : '') + '\n\n— মুনাজাতে মাকবূল'; };

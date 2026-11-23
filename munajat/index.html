@@ -25,6 +25,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 video{width:100%;max-height:34vh;background:#000;border-radius:12px;display:block}
 .no-video video,.audio-only video{display:none}
 .no-video .stage,.audio-only .stage{grid-template-columns:1fr!important;max-width:420px;margin:0 auto;padding-top:4px}
+.pbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--deep);color:#f6f4ee;padding:2px 6px max(4px,env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.18)}
+.pbar #status{font-size:12px;color:#cfdcd6;min-height:0;text-align:center;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 8px 0}.pbar #status:empty{display:none}
+.pbtns{display:flex;justify-content:space-around;align-items:center;max-width:560px;margin:0 auto}
+.pb{width:48px;height:46px;border:0;background:transparent;color:#f6f4ee;display:flex;align-items:center;justify-content:center;border-radius:12px;padding:0}.pb svg{width:24px;height:24px}.pb:active{background:rgba(255,255,255,.12)}
+.pbar #play{width:48px;height:46px;border-radius:12px;background:transparent;color:var(--gold)}.pbar #play svg{width:28px;height:28px}
+#afterBtn{position:relative}#afterBtn small{position:absolute;bottom:3px;right:6px;font-size:10px;font-weight:700;color:var(--gold)}
+body{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 .ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 2px}
 #play{width:60px;height:60px;border-radius:50%;border:0;background:var(--gold);color:var(--deep);display:flex;align-items:center;justify-content:center}#play svg{width:28px;height:28px}
 #status{font-size:13px;color:#cfdcd6;min-height:20px;text-align:center}
@@ -120,17 +127,6 @@ body:not(.m-line) .lrep{display:none}
       <div class="tt"><b>মুনাজাতে মাকবূল · <span id="dayTitle"></span></b><span id="dayRange"></span></div>
       <button class="ib" id="aboutBtn" aria-label="অ্যাপ সম্পর্কে" style="font-size:20px;font-weight:700">ⓘ</button><button class="ib" id="sheetBtn" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
     </div>
-    <div class="stage">
-      <audio id="media" preload="auto"></audio>
-      <div>
-        <div class="ctl">
-          <button class="ib" id="prev" aria-label="আগের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button>
-          <button id="play" aria-label="চালান"></button>
-          <button class="ib" id="next" aria-label="পরের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></button>
-        </div>
-        <div id="status" aria-live="polite"></div>
-      </div>
-    </div>
   </div>
 </header>
 <div class="wrap">
@@ -162,6 +158,18 @@ body:not(.m-line) .lrep{display:none}
   <main id="list"></main>
 </div>
 <div id="hifz" hidden><p id="hifzMsg">এবার আপনি লাইনটা বলুন</p><div><button type="button" id="hifzAgain">↻ আবার শুনুন</button><button type="button" id="hifzNext">পরের লাইন ▶</button></div></div>
+<nav class="pbar" aria-label="প্লেয়ার">
+  <audio id="media" preload="auto"></audio>
+  <div id="status" aria-live="polite"></div>
+  <div class="pbtns">
+    <button class="pb" id="prev" aria-label="আগের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button>
+    <button class="pb" id="play" aria-label="চালান"></button>
+    <button class="pb" id="next" aria-label="পরের দোয়া"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 5v14M5 5l9 7-9 7z"/></svg></button>
+    <button class="pb" id="stopBtn" aria-label="বন্ধ"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg></button>
+    <button class="pb" id="afterBtn" aria-label="দোয়া শেষ হলে"></button>
+    <button class="pb" id="sheetBtn2" aria-label="সেটিংস"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+</nav>
 <div class="sheet" id="mean" hidden>
   <div class="sp" role="dialog" aria-label="পুরো বাংলা অর্থ">
     <div class="row"><h2 style="flex:1" id="meanTitle">পুরো অর্থ</h2><button class="ib" id="meanClose" aria-label="বন্ধ">✕</button></div>
@@ -197,7 +205,7 @@ body:not(.m-line) .lrep{display:none}
     <div class="grp"><span>ফাইল</span><button class="big" onclick="document.getElementById('file').click()">অন্য ফাইল দিন</button></div>
   </div>
 </div>
-<script src="data.js?v=50"></script>
-<script src="app.js?v=50"></script>
+<script src="data.js?v=51"></script>
+<script src="app.js?v=51"></script>
 </body>
 </html>
