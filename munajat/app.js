@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 55, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 56, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [56, '২৩ নভে ২০২৬', ['নতুন অংশ "সূরা": সূরা আল-কাহফ — ১২ রুকু, প্রতিটা আয়াত এক লাইন; দোয়ার মতোই বাছাই, রিপিট, অর্থ, শেয়ার', 'সূরার অডিও "ফাইল দিন" দিয়ে দিন; আয়াতের সময় আপাতত আনুমানিক']],
     [55, '২৩ নভে ২০২৬', ['লাইন বাছাই থাকলে ▶ চাপলে প্রথম বাছাই করা লাইন থেকে শুরু হয়; বাছাই না থাকলে দোয়ার শুরু থেকে']],
     [54, '২৩ নভে ২০২৬', ['খোলা দোয়ার প্রতিটা লাইনে ☐ বাছাই', 'কয়েকটা লাইন বেছে নিচের 🔁 চাপলে সেই দল একসাথে ১/২/৩/৫/৭/১০ বার রিপিট হয়, তারপর পরের লাইনে যায়', '"বাছাই মুছুন" দিয়ে দল তুলে দেওয়া যায়; অন্য দোয়ায় গেলে নিজে মুছে যায়']],
     [53, '২৩ নভে ২০২৬', ['রিপিট চলার সময় অন্য লাইনে চাপলে সরাসরি সেই লাইনে যায়, রিপিট আবার ১ হয়ে যায়', 'রিপিট শুধু চলতি লাইনের জন্য — একসাথে একটা লাইনেই থাকে, অন্য দোয়ায় গেলে মুছে যায়']],
@@ -47,7 +48,7 @@
   if (S.v !== VER) { S.nudge = {}; S.v = VER; if (S.perDay) Object.values(S.perDay).forEach((p) => { p.nudge = {}; }); } // সময় নতুন করে মেলানো হয়েছে — পুরোনো সরানো বাদ
   if (!S.mnOn1) { S.showMeaning = true; S.mnOn1 = 1; } /* একবার: বাংলা অর্থ চালু করে দাও */ if (!Array.isArray(S.sel)) S.sel = []; if (!S.fav || typeof S.fav !== 'object') S.fav = {};
   /* ---------- দিন: ৭ দিনের তালিকা; যে দিনের লেখা এখনো নেই, সেটা পুরো ফাইল এক টানা বাজে ---------- */
-  const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল']];
+  const DAYS = [['saturday', 'শনিবার', '১ম মনজিল'], ['sunday', 'রবিবার', '২য় মনজিল'], ['monday', 'সোমবার', '৩য় মনজিল'], ['tuesday', 'মঙ্গলবার', '৪র্থ মনজিল'], ['wednesday', 'বুধবার', '৫ম মনজিল'], ['thursday', 'বৃহস্পতিবার', '৬ষ্ঠ মনজিল'], ['friday', 'জুমাবার', '৭ম মনজিল'], ['kahf', 'সূরা আল-কাহফ', '১৮ নং সূরা']];
   let DAYID = 'friday'; try { DAYID = localStorage.getItem('mm_day') || 'friday'; } catch (e) {}
   let FRESH = false; try { FRESH = !sessionStorage.getItem('mm_s'); sessionStorage.setItem('mm_s', '1'); } catch (e) {}
   if (FRESH && S.autoDay !== false) { try { if (!sessionStorage.getItem('mm_go')) { DAYID = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()]; localStorage.setItem('mm_day', DAYID); } } catch (e) {} }
@@ -57,7 +58,7 @@
   const DMETA = DAYS.find((d) => d[0] === DAYID);
   const day = DATA.days.find((d) => d.id === DAYID) || {id: DAYID, title: DMETA[1] + ' · ' + DMETA[2], range: 'লেখা এখনো যোগ হয়নি — শুধু অডিও', placeholder: true,
     duas: [{no: '—', s: 0, e: 1e6, lines: [{ar: '', bn: 'এই দিনের আরবি লেখা, উচ্চারণ আর অর্থ এখনো যোগ হয়নি। অডিও পুরোটা বাজবে।', s: 0, e: 1e6}]}]};
-  const duas = day.duas, DAYKEY = DAYID;
+  const duas = day.duas, DAYKEY = DAYID, UNIT = day.unit || 'দোয়া';
   // প্রতিটি দিনের বাছাই, কোন দোয়ায় ছিলেন আর সময়-ঠিক আলাদা থাকে
   S.perDay = S.perDay || {}; if (!S.perDay.friday && !S.dayInit) S.perDay.friday = {dua: S.dua, sel: S.sel, nudge: S.nudge}; S.dayInit = 1;
   { const pd = S.perDay[DAYID] || {}; S.dua = Math.min(pd.dua || 0, duas.length - 1); S.sel = (pd.sel || []).filter((i) => i < duas.length); S.nudge = pd.nudge || {}; S.lrep = pd.lrep || {}; }
@@ -169,8 +170,8 @@
   const sched = () => { clearTimeout(endT); const it = plan && plan.items[plan.k]; if (!it || media.paused || !wantPlay) return; const ms = (it.e + OFF() - media.currentTime) / (media.playbackRate || 1) * 1000; endT = setTimeout(() => { if (!check()) sched(); }, Math.max(15, Math.min(ms - 10, 5000))); };
   let nms; const NMS = () => { if (!S.nms) return null; if (nms !== undefined) return nms; nms = null; try { const C = window.Capacitor; if (!C || !(C.isNativePlatform && C.isNativePlatform())) return null; const P = C.Plugins && C.Plugins.MediaSession; if (P && P.setPlaybackState) nms = P; else if (C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('MediaSession'))) { const call = (m) => (o) => C.nativePromise('MediaSession', m, o || {}); nms = { setMetadata: call('setMetadata'), setPlaybackState: call('setPlaybackState'), setActionHandler: (o, cb) => C.nativeCallback('MediaSession', 'setActionHandler', o, cb) }; } } catch (e) { nms = null; } lg('nms', nms ? 'yes' : 'no'); return nms; };
   let nmsState = '', nmsTitle = '';
-  const nmsSync = (it) => { const n = NMS(); if (!n) return; const st = plan && wantPlay ? 'playing' : (plan ? 'paused' : 'none'); try { if (it) { const t = 'দোয়া ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''); if (t !== nmsTitle) { nmsTitle = t; n.setMetadata({ title: t, artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল' }).catch(() => {}); } } if (st !== nmsState) { nmsState = st; n.setPlaybackState({ playbackState: st }).catch(() => {}); } } catch (e) { lg('nms-error', String(e)); } };
-  const meta = (it) => { nmsSync(it); if (!('mediaSession' in navigator) || !it) return; try { navigator.mediaSession.metadata = new MediaMetadata({title: 'দোয়া ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''), artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল', artwork: [{src: 'icon.svg', sizes: '512x512', type: 'image/svg+xml'}]}); } catch (e) {} };
+  const nmsSync = (it) => { const n = NMS(); if (!n) return; const st = plan && wantPlay ? 'playing' : (plan ? 'paused' : 'none'); try { if (it) { const t = UNIT + ' ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''); if (t !== nmsTitle) { nmsTitle = t; n.setMetadata({ title: t, artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল' }).catch(() => {}); } } if (st !== nmsState) { nmsState = st; n.setPlaybackState({ playbackState: st }).catch(() => {}); } } catch (e) { lg('nms-error', String(e)); } };
+  const meta = (it) => { nmsSync(it); if (!('mediaSession' in navigator) || !it) return; try { navigator.mediaSession.metadata = new MediaMetadata({title: UNIT + ' ' + duas[it.i].no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) : ''), artist: DMETA ? DMETA[1] + ' · ' + DMETA[2] : '', album: 'মুনাজাতে মাকবূল', artwork: [{src: 'icon.svg', sizes: '512x512', type: 'image/svg+xml'}]}); } catch (e) {} };
   const tick = () => { const t = media.currentTime, it = plan && plan.items[plan.k]; if (check()) return; highlight(it && it.j != null ? null : t - OFF(), it); if (!media.paused && !document.hidden) requestAnimationFrame(tick); };
   media.addEventListener('play', () => requestAnimationFrame(tick)); media.addEventListener('seeked', () => { tick(); sched(); }); media.addEventListener('playing', () => { sched(); unmute(); }); media.addEventListener('timeupdate', () => { if (!check() && document.hidden) highlight(null, plan && plan.items[plan.k]); }); media.addEventListener('ratechange', sched);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && !media.paused) requestAnimationFrame(tick);
@@ -184,7 +185,7 @@
   const status = (msg) => { const it = plan && plan.items[plan.k], el = $('#status'); if (!el) return;
     if (!it) { el.textContent = msg || 'থামানো'; renderBar(); return; }
     const d = duas[it.i], q = queue(), qk = q.indexOf(it.i);
-    el.textContent = (S.sel.length && qk >= 0 ? 'তালিকা ' + bn(qk + 1) + '/' + bn(q.length) + ' · ' : '') + 'দোয়া ' + d.no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) + '/' + bn(d.lines.length) : it.whole ? ' · পুরোটা' : '') + ' · ' + bn(it.rep) + '/' + bn(it.of) + ' বার' + (msg ? ' · ' + msg : ''); renderBar(); };
+    el.textContent = (S.sel.length && qk >= 0 ? 'তালিকা ' + bn(qk + 1) + '/' + bn(q.length) + ' · ' : '') + UNIT + ' ' + d.no + (it.j != null ? ' · লাইন ' + bn(it.j + 1) + '/' + bn(d.lines.length) : it.whole ? ' · পুরোটা' : '') + ' · ' + bn(it.rep) + '/' + bn(it.of) + ' বার' + (msg ? ' · ' + msg : ''); renderBar(); };
   let lastHL = '';
   const highlight = (t, it) => { let hi = -1, hj = -1; if (t == null && it) { hi = it.i; hj = it.j; } else if (t != null) { const tt = t + 0.05; duas.forEach((d, i) => d.lines.forEach((L, j) => { const [s, e] = lineSpan(i, j); if (tt >= s && tt < e) { hi = i; hj = j; } })); }
     const k = hi + ':' + hj; if (k === lastHL) return; lastHL = k; $$('.ln.on').forEach((e) => e.classList.remove('on'));
@@ -258,17 +259,17 @@
       if (!S.lrep) S.lrep = {}; const key = i + ':' + j, LM = S.mode === 'line', cur = LM ? lreps(i, j) : (TR[key] || 1), ci = RSTEPS.indexOf(cur), n = ci < 0 ? (RSTEPS.find((x) => x > cur) || 1) : RSTEPS[(ci + 1) % RSTEPS.length]; TR = {}; if (n > 1 || LM) TR[key] = n;
       const dr = it.dr || it.rep || 1, items = buildPlan(i); let k = items.findIndex((x) => x.j === j && (x.dr || 1) === (S.mode === 'line' ? 1 : Math.min(dr, S.reps)) && x.rep === (it.j === j ? Math.min(it.rep, x.of) : 1));
       if (k < 0) k = items.findIndex((x) => x.j === j); if (k < 0) k = items.findIndex((x) => x.j == null); plan = {items, k: Math.max(0, k)}; try { sched(); } catch (e) {}
-      lg('rpt', duas[i].no, 'line', j + 1, n); status('দোয়া ' + duas[i].no + ' · লাইন ' + bn(j + 1) + ': ' + (n > 1 ? bn(n) + ' বার' : 'একবার (রিপিট নেই)')); drawRpt(); render(); return; }
+      lg('rpt', duas[i].no, 'line', j + 1, n); status(UNIT + ' ' + duas[i].no + ' · লাইন ' + bn(j + 1) + ': ' + (n > 1 ? bn(n) + ' বার' : 'একবার (রিপিট নেই)')); drawRpt(); render(); return; }
     if (b.id === 'sheetBtn2') { $('#sheet').hidden = false; return; }
     if (b.id === 'sheetBtn') { $('#sheet').hidden = false; return; } if (b.id === 'sheetClose') { $('#sheet').hidden = true; return; }
     if (b.id === 'addFile' || b.id === 'addFile2') { $('#file').value = ''; $('#file').click(); return; } });
-  const duaText = (i) => { const d = duas[i], r = d.ref; return 'দোয়া ' + d.no + ' — ' + day.title + '\n\n' + d.lines.map((L) => L.ar + (L.bn ? '\n' + L.bn : '') + (L.mn ? '\n' + L.mn : '')).join('\n\n') + (r ? '\n\nউৎস: ' + r.txt : '') + '\n\n— মুনাজাতে মাকবূল'; };
+  const duaText = (i) => { const d = duas[i], r = d.ref; return UNIT + ' ' + d.no + ' — ' + day.title + '\n\n' + d.lines.map((L) => L.ar + (L.bn ? '\n' + L.bn : '') + (L.mn ? '\n' + L.mn : '')).join('\n\n') + (r ? '\n\nউৎস: ' + r.txt : '') + '\n\n— মুনাজাতে মাকবূল'; };
   const SITE = 'https://sil-cbs.github.io/shopno-kuthir/munajat/';
   const nShare = () => { try { const C = window.Capacitor; if (C && C.isNativePlatform && C.isNativePlatform() && C.nativePromise && (!C.isPluginAvailable || C.isPluginAvailable('Share'))) return (o) => C.nativePromise('Share', 'share', o); } catch (e) {} return null; };
   const openOut = (u) => { const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); };
   const copyText = (t, b) => { const ok = () => { if (b) { const o = b.textContent; b.textContent = 'কপি হয়েছে ✓'; setTimeout(() => { b.textContent = o; }, 1800); } }; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok).catch(() => { const x = document.createElement('textarea'); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand('copy'); ok(); } catch (e) {} x.remove(); }); };
   const shareSheet = (t, title, b) => { const n = nShare(); if (n) return n({ title, text: t, dialogTitle: 'শেয়ার করুন' }).catch((e) => { lg('share-error', (e && e.message) || e); copyText(t, b); }); if (navigator.share) return navigator.share({ title, text: t }).catch(() => {}); copyText(t, b); status('এই ব্রাউজারে শেয়ার নেই — লেখা কপি হয়েছে'); };
-  const shareTo = (how, i, b) => { const t = duaText(i), title = 'দোয়া ' + duas[i].no; lg('share', how, duas[i].no);
+  const shareTo = (how, i, b) => { const t = duaText(i), title = UNIT + ' ' + duas[i].no; lg('share', how, duas[i].no);
     if (how === 'wa') return openOut('https://wa.me/?text=' + encodeURIComponent(t));
     if (how === 'tg') return openOut('https://t.me/share/url?url=' + encodeURIComponent(SITE) + '&text=' + encodeURIComponent(t));
     if (how === 'copy') return copyText(t, b);
@@ -297,7 +298,7 @@
     if (meanMode === 'list') { $('#meanTitle').textContent = (DMETA ? DMETA[1] + ' · ' + DMETA[2] : '') + ' — সব অর্থ';
       $('#meanBody').innerHTML = tabs + '<button type="button" class="mspk" data-mspk="all">🔊 সব অর্থ ক্রমে শুনুন</button><div class="mlist">' + M.map((j) => '<button type="button" class="mli' + (j === meanIdx ? ' cur' : '') + '" data-mpick="' + j + '"><span class="mno">' + esc(duas[j].no) + '</span><span class="mtx">' + esc(mText(duas[j])) + '</span></button>').join('') + '</div>';
       const c = $('#meanBody .mli.cur'); if (c) setTimeout(() => c.scrollIntoView({ block: 'center' }), 30); return; }
-    $('#meanTitle').textContent = 'দোয়া ' + d.no + ' — পুরো অর্থ';
+    $('#meanTitle').textContent = UNIT + ' ' + d.no + ' — পুরো অর্থ';
     const nav = '<div class="mnav"><button type="button" data-mnav="-1"' + (k <= 0 ? ' disabled' : '') + '>◀ আগের</button><span>' + bn(k + 1) + ' / ' + bn(M.length) + '</span><button type="button" data-mnav="1"' + (k >= M.length - 1 ? ' disabled' : '') + '>পরের ▶</button></div>';
     const spk = '<div class="mspkrow"><button type="button" class="mspk' + (mSpk === 'one' ? ' on' : '') + '" data-mspk="one">' + (mSpk === 'one' ? '⏹ থামান' : '🔊 অর্থ শুনুন') + '</button><button type="button" class="mspk' + (mSpk === 'all' ? ' on' : '') + '" data-mspk="all">' + (mSpk === 'all' ? '⏹ থামান' : '🔊 এখান থেকে সব') + '</button></div><div id="mspkMsg" class="mspkmsg"></div>';
     $('#meanBody').innerHTML = tabs + nav + spk + '<p class="mfull' + (mSpk ? ' speaking' : '') + '">' + esc(mText(d)) + '</p>' + (d.ref ? refHtml(d) : '')
@@ -341,14 +342,14 @@
   /* ---------- দিনের তালিকা ---------- */
   async function drawDays() { const box = $('#days'); if (!box) return; const keys = await mediaKeys(); const sz = {}; for (const k of keys) { try { const b = await getMedia(k); if (b) sz[k] = bn((b.size / 1048576).toFixed(1)) + ' MB'; } catch (e) {} }
     box.innerHTML = DAYS.map(([id, nm, mz]) => { const has = keys.includes(id), txt = DATA.days.some((d) => d.id === id);
-      return `<button type="button" class="dy${id === DAYID ? ' cur' : ''}" data-day="${id}"><b>${nm}</b><small>${mz}</small><i class="${has ? 'ok' : 'no'}">${has ? '✓ ফাইল আছে · ' + (sz[id] || '') : '+ ফাইল দিন'}</i>${txt ? '' : '<i class="tx">শুধু অডিও</i>'}</button>`; }).join('');
+      return (id === 'kahf' ? '<span class="dsep">সূরা</span>' : '') + `<button type="button" class="dy${id === DAYID ? ' cur' : ''}" data-day="${id}"><b>${nm}</b><small>${mz}</small><i class="${has ? 'ok' : 'no'}">${has ? '✓ ফাইল আছে · ' + (sz[id] || '') : '+ ফাইল দিন'}</i>${txt ? '' : '<i class="tx">শুধু অডিও</i>'}</button>`; }).join('');
     box.querySelectorAll('[data-day]').forEach((b) => b.onclick = async () => { const id = b.dataset.day, has = (await mediaKeys()).includes(id);
       if (id === DAYID) { if (!has) { $('#file').value = ''; $('#file').click(); } return; }
       save(); try { localStorage.setItem('mm_day', id); } catch (e) {} if (!has) { try { sessionStorage.setItem('mm_pick', '1'); } catch (e) {} } location.reload(); }); }
   /* ---------- YouTube লিংক ---------- */
   const YT = {saturday: ['eXRpUSNg4kU', '৬:৫৩'], sunday: ['r9dl5B4s8Mw', '৭:৫৩'], monday: ['igljQbIt2l8', '৬:০৫'], tuesday: ['mwO0Kr2cxZM', '৭:১১'], wednesday: ['M-TQxQZMpRw', '৬:৪৪'], thursday: ['QNBfWBxag_Q', '৭:১১'], friday: ['xzTJfBrknNc', '৬:১০']};
   (() => { const box = $('#ytList'); if (!box) return;
-    DAYS.forEach(([id, nm, mz]) => { const [vid, len] = YT[id], url = 'https://youtu.be/' + vid, dd = DATA.days.find((d) => d.id === id);
+    DAYS.forEach(([id, nm, mz]) => { if (!YT[id]) return; const [vid, len] = YT[id], url = 'https://youtu.be/' + vid, dd = DATA.days.find((d) => d.id === id);
       const nums = dd ? dd.duas.map((x) => x.no).filter((n) => /^[০-৯]+$/.test(n)) : [];
       const parts = dd ? dd.duas.filter((x) => x.no !== 'বিসমিল্লাহ').length : 0, info = dd ? (dd.range + ' · অ্যাপে ' + bn(parts) + 'টি দোয়া/অংশ') : 'দোয়ার নম্বর: লেখা যোগ হলে জানা যাবে';
       const r = document.createElement('div'); r.className = 'ytr';
@@ -384,6 +385,8 @@
   const APK_LATEST = 6, APK_URL = 'https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk';
   const apkBuild = (() => { const m = navigator.userAgent.match(/MunajatApk\/(\d+)/); return m ? +m[1] : 0; })();
   if (apkBuild && apkBuild < APK_LATEST) { const p = document.createElement('a'); p.href = APK_URL; p.target = '_blank'; p.rel = 'noopener'; p.textContent = '📲 অ্যাপের নতুন সংস্করণ (APK) এসেছে — চাপলে নামবে, তারপর Install'; p.style.cssText = 'display:block;margin:8px 12px;padding:12px 14px;border-radius:14px;background:#e0b84c;color:#1b2a22;font-weight:700;text-decoration:none;text-align:center'; document.body.insertBefore(p, document.body.firstChild); }
+  if (day.approx) { media.addEventListener('loadedmetadata', () => { const D = media.duration; if (!(D > 60) || day._sc) return; const f = D / day.dur; day._sc = f; duas.forEach((d) => { d.s *= f; d.e *= f; d.lines.forEach((L) => { L.s *= f; L.e *= f; }); }); lg('approx-scale', f.toFixed(3)); render(); });
+    const n = document.createElement('div'); n.className = 'resume'; n.innerHTML = '<span>এই সূরার আয়াতের সময় এখন <b>আনুমানিক</b> — অডিওর দৈর্ঘ্য দেখে ভাগ করা। অডিও ফাইলটা চ্যাটে পাঠালে ঠিকঠাক মিলিয়ে দেওয়া হবে।</span>'; const L = $('#list'); L.parentNode.insertBefore(n, L); }
   render(); loadMedia(); drawDays();
   setTimeout(() => { try { if (window.__nc) { lg('native-crash', String(window.__nc).slice(0, 1500)); window.__nc = null; } } catch (e) {} }, 5000);
   if (FRESH && !day.placeholder && S.dua > 0 && duas[S.dua]) { const r = document.createElement('div'); r.className = 'resume'; r.id = 'resume'; r.innerHTML = '<span>শেষবার দোয়া ' + esc(duas[S.dua].no) + '-এ ছিলেন — সেখান থেকে চালাবেন?</span><button type="button" data-resume="' + S.dua + '">▶ চালান</button><button type="button" data-resume="x" aria-label="বন্ধ">✕</button>'; const L = $('#list'); L.parentNode.insertBefore(r, L); }
