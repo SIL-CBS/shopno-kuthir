@@ -14,10 +14,36 @@ w = lambda t: len(DIAC.sub('', t).replace(' ', '')) + 14   # letters + a pause a
 BIS0 = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ'
 BIS = NORM(BIS0)
 units = [('বিসমিল্লাহ', [dict(ar=BIS, bn='Bismillahi alrrahmani alrraheemi', mn='পরম করুণাময়, অসীম দয়ালু আল্লাহর নামে।', w=w(BIS))], None)]
-for a, z in RUKU:
-    lines = [dict(ar=NORM(v['text']), bn=v['transliteration'], mn=v['translation'] + ' (' + b(v['id']) + ')', w=w(v['text'])) for v in V[a - 1:z]]
-    rng = b(a) + '–' + b(z)
-    units.append((rng, lines, dict(t='q', txt='সূরা আল-কাহফ ১৮:' + rng, url='https://quran.com/18/%d-%d' % (a, z), short='কাহফ ' + rng)))
+WAQF = set('ۖۗۘۙۚۛۜ')
+LET = lambda t: len(DIAC.sub('', t).replace(' ', ''))
+def pieces(words):
+    """Split an ayat (list of words) into lines: at waqf marks first, then long runs into ~8-word chunks."""
+    if LET(' '.join(words)) <= 75: return [words]
+    segs, cur = [], []
+    for wd in words:
+        cur.append(wd)
+        if any(c in WAQF for c in wd) and LET(' '.join(cur)) >= 25: segs.append(cur); cur = []
+    if cur:
+        if segs and LET(' '.join(cur)) < 20: segs[-1] += cur
+        else: segs.append(cur)
+    out = []
+    for sg in segs:
+        n = LET(' '.join(sg))
+        if n <= 85: out.append(sg); continue
+        k = -(-n // 70); size = -(-len(sg) // k)
+        out += [sg[i:i + size] for i in range(0, len(sg), size)]
+    if len(out) > 1 and LET(' '.join(out[-1])) < 15: out[-2] += out.pop()
+    return out
+for v in V:
+    ar = NORM(v['text']); aw = ar.split(' '); tw = v['transliteration'].split(' ')
+    ps = pieces(aw); lines = []; ti = 0
+    for k, pc in enumerate(ps):
+        if len(aw) == len(tw): tn = len(pc)
+        else: tn = round(len(tw) * len(pc) / len(aw)) if k < len(ps) - 1 else len(tw) - ti
+        tr = ' '.join(tw[ti:ti + tn]) if k < len(ps) - 1 else ' '.join(tw[ti:]); ti += tn
+        lines.append(dict(ar=' '.join(pc), bn=tr, mn=v['translation'] if k == len(ps) - 1 else '', w=w(' '.join(pc))))
+    n = b(v['id'])
+    units.append((n, lines, dict(t='q', txt='সূরা আল-কাহফ ১৮:' + n, url='https://quran.com/18/%d' % v['id'], short='কাহফ ১৮:' + n)))
 DUR = 2700.0
 tot = sum(L['w'] for _, ls, _ in units for L in ls); t = 2.0; scale = (DUR - 4) / tot
 duas = []
@@ -28,7 +54,7 @@ for no, ls, ref in units:
     d = dict(no=no, s=round(s0, 2), e=round(t, 2), lines=out)
     if ref: d['ref'] = ref
     duas.append(d)
-day = dict(id='kahf', title='সূরা আল-কাহফ', range='১১০ আয়াত · ১২ রুকু', mnSrc='', unit='আয়াত', approx=True, duas=duas, dur=DUR)
+day = dict(id='kahf', title='সূরা আল-কাহফ', range='আয়াত ১–১১০', mnSrc='', unit='আয়াত', approx=True, duas=duas, dur=DUR)
 p = ROOT + '/munajat/data.js'; s = open(p, encoding='utf8').read()
 pre = 'window.MUNAJAT = '; assert s.startswith(pre)
 D = json.loads(s[len(pre):].rstrip().rstrip(';'))
