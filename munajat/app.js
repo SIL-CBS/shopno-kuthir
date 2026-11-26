@@ -2,8 +2,9 @@
 (() => {
   const DATA = window.MUNAJAT, $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const BN = '০১২৩৪৫৬৭৮৯', bn = (v) => String(v).replace(/\d/g, (d) => BN[d]);
-  const APPVER = 59, APPDATE = '২৩ নভেম্বর ২০২৬';
+  const APPVER = 60, APPDATE = '২৩ নভেম্বর ২০২৬';
   const CHANGES = [
+    [60, '২৬ নভে ২০২৬', ['দোয়া/আয়াত নম্বরে চাপলে: খোলা থাকলে বন্ধ, বন্ধ থাকলে খোলে; অন্যটায় চাপলে সেটা খোলে আর আগেরটা বন্ধ হয়', 'খোলা দোয়া বন্ধ করলে অডিও থামে না; পরের দোয়ায় গেলে সেটা নিজে খুলে যায়']],
     [59, '২৩ নভে ২০২৬', ['⏮ একবার চাপলে চলতি লাইন শুরু থেকে; দ্রুত দুবার চাপলে আগের লাইনে (প্রথম লাইনে থাকলে আগের দোয়া/আয়াতে)']],
     [58, '২৩ নভে ২০২৬', ['সূরা আল-কাহফ: আয়াত এখন দোয়ার লাইনের মতো ছোট ছোট লাইনে ভাঙা (৩২০ লাইন) — প্রতিটা লাইন আলাদা বাছাই ও রিপিট করা যায়']],
     [57, '২৩ নভে ২০২৬', ['সূরা আল-কাহফ: এখন প্রতিটা আয়াত আলাদা কার্ড, আয়াত নম্বরসহ', 'বড় আয়াত কয়েক লাইনে ভাঙা (ওয়াকফ চিহ্ন ধরে) — দোয়ার লাইনের মতোই বাছাই আর রিপিট', 'অর্থ আয়াতের শেষ লাইনে; "অর্থ" বোতামে পুরো আয়াতের অর্থ']],
@@ -92,7 +93,7 @@
   addEventListener('pagehide', () => lg('pagehide')); addEventListener('freeze', () => lg('freeze')); addEventListener('resume', () => lg('resume')); let plan = null, timer = null, wantPlay = false;
   /* প্রতি লাইন কতবার (লাইন ধরে মোডে) — না দিলে সেটিংসের "কতবার" */
   const LSTEPS = [0, 1, 2, 3, 4, 5, 7, 10];
-  let lastPrev = 0;
+  let lastPrev = 0, collapsed = false;
   let LS = [], GR = 1; // বাছাই করা লাইন (চলতি দোয়ার) আর সেই দলের রিপিট
   let TR = {}; // নিচের 🔁 বোতামের সাময়িক রিপিট — অন্য লাইনে চাপলে মুছে যায়
   const lreps = (i, j) => { const t = TR[i + ':' + j]; if (t) return t; const v = S.lrep && S.lrep[i + ':' + j]; return v ? v : S.reps; };
@@ -150,7 +151,7 @@
     else if (d.lines.some((_, j) => (TR[i + ':' + j] || 1) > 1)) { for (let r = 1; r <= S.reps; r++) d.lines.forEach((_, j) => { const [s, e] = lineSpan(i, j), n = TR[i + ':' + j] || 1; for (let q = 1; q <= n; q++) out.push({i, j, s, e, rep: q, of: n, dr: r}); }); }
     else { const [s, e] = duaSpan(i); for (let r = 1; r <= S.reps; r++) out.push({i, j: null, s, e, rep: r, of: S.reps}); }
     return out; };
-  const playDua = (i, fromLine) => { if (i !== S.dua) { TR = {}; LS = []; GR = 1; } S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine == null && grpOn(i)) { const g0 = Math.min(...LS), k = plan.items.findIndex((x) => x.j === g0); if (k >= 0) plan.k = k; } if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
+  const playDua = (i, fromLine) => { if (i !== S.dua) collapsed = false; if (i !== S.dua) { TR = {}; LS = []; GR = 1; } S.dua = i; save(); plan = {items: buildPlan(i), k: 0}; if (fromLine == null && grpOn(i)) { const g0 = Math.min(...LS), k = plan.items.findIndex((x) => x.j === g0); if (k >= 0) plan.k = k; } if (fromLine != null && S.mode !== 'dua') { const k = plan.items.findIndex((x) => x.j === fromLine); if (k >= 0) plan.k = k; } startItem(); render(); };
   const startItem = () => { clearTimeout(timer); pend = null; const it = plan && plan.items[plan.k]; if (!it) return finishDua(); if (it.tts != null) return speakItem(it); wantPlay = true; media.playbackRate = S.speed; const x = Math.max(0, it.s + OFF() - (it.j ? LEAD : 0.02)); status(); meta(it);
     /* পর্দা খোলা: চুপ করে একটু আগে থেকে চালু, ঠিক শুরুতে আওয়াজ — যাতে আগের অংশের কোনো টুকরো (ফোনের বাফার) না বাজে।
        পর্দা বন্ধ/পেছনে: থামানো ছাড়াই সরাসরি লাফ, যাতে লক স্ক্রিনে প্লেয়ার বন্ধ না হয়। */
@@ -214,7 +215,7 @@
     $$('[data-set]').forEach((b) => { const [k, v] = b.dataset.set.split(':'); b.setAttribute('aria-pressed', String(String(S[k]) === v)); });
     $('#reps').textContent = bn(S.reps) + '×'; $('#gap').textContent = bn(S.gap) + ' সে.'; $('#whole').textContent = bn(S.whole) + '×'; $('#wholeRow').hidden = S.mode !== 'line';
     renderPick();
-    $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua, n = nd(i), sel = isSel(i);
+    $('#list').innerHTML = duas.map((d, i) => { const open = i === S.dua && !collapsed, n = nd(i), sel = isSel(i);
       return '<article class="dua' + (open ? ' open' : '') + (sel ? ' sel' : '') + '" id="d-' + i + '"><div class="dhw"><button class="pick" data-pick="' + i + '" role="checkbox" aria-checked="' + sel + '" aria-label="দোয়া ' + esc(d.no) + ' তালিকায় রাখুন"><span class="box">' + (sel ? '✓' : '') + '</span></button><button class="dh" data-dua="' + i + '"><span class="no">' + esc(d.no) + '</span><span class="first" lang="ar" dir="rtl">' + esc(d.lines[0].ar) + '</span><span class="dur">' + bn(Math.round(d.e - d.s)) + ' সে.</span></button>' + (d.lines.some((L) => L.mn) ? '<button class="mb" data-mean="' + i + '" aria-label="পুরো বাংলা অর্থ" title="পুরো বাংলা অর্থ">অর্থ</button>' : '') + refChip(d) + '<button class="star' + (isFav(i) ? ' on' : '') + '" data-fav="' + i + '" aria-label="প্রিয়" aria-pressed="' + isFav(i) + '">' + (isFav(i) ? '★' : '☆') + '</button></div>' +
         (open ? '<div class="lines">' + d.lines.map((L, j) => '<div class="ln' + (LS.includes(j) ? ' lsel' : '') + '" id="l-' + i + '-' + j + '" data-line="' + j + '"><button type="button" class="lpick" data-lsel="' + j + '" role="checkbox" aria-checked="' + LS.includes(j) + '" aria-label="লাইন ' + bn(j + 1) + ' বাছাই"><span class="box">' + (LS.includes(j) ? '✓' : '') + '</span></button>' + lrepBtn(i, j) + '<div class="ar" lang="ar" dir="rtl">' + esc(L.ar) + '</div><div class="bn">' + esc(L.bn) + '</div>' + (L.mn || !d.lines.some((x) => x.mn) ? '<div class="mn">' + esc(L.mn || 'অর্থ এখনো যোগ হয়নি') + '</div>' : '') + '</div>').join('') +
           (LS.length ? '<div class="lgrp"><span>বাছাই ' + bn(LS.length) + 'টি লাইন · একসাথে ' + (GR > 1 ? bn(GR) + ' বার' : 'রিপিট নেই — নিচের 🔁 চাপুন') + '</span><button type="button" data-lsel="x">বাছাই মুছুন</button></div>' : (d.lines.length > 1 ? '<div class="lgrp hint"><span>লাইনের বাঁ পাশের ☐ দিয়ে কয়েকটা লাইন বেছে 🔁 চাপলে সেগুলো একসাথে রিপিট হবে</span></div>' : '')) +
@@ -235,7 +236,7 @@
     if (b.id === 'pickAll') { S.sel = duas.map((_, i) => i); save(); render(); return; }
     if (b.id === 'pickNone') { S.sel = []; save(); render(); return; }
     if (b.id === 'pickPlay') { if (!media.src) return; stop(); startList(); return; }
-    if (ds.dua != null) { const i = +ds.dua; if (i !== S.dua) { LS = []; GR = 1; TR = {}; stop(); S.dua = i; save(); render(); $('#d-' + i).scrollIntoView({block: 'start', behavior: 'smooth'}); } if (media.src) playDua(i); return; }
+    if (ds.dua != null) { const i = +ds.dua; if (i === S.dua) { collapsed = !collapsed; lg('dua', collapsed ? 'close' : 'open', duas[i].no); render(); if (!collapsed) { const el = $('#d-' + i); if (el) el.scrollIntoView({block: 'nearest', behavior: 'smooth'}); if (media.src && !plan) playDua(i); } return; } collapsed = false; if (i !== S.dua) { LS = []; GR = 1; TR = {}; stop(); S.dua = i; save(); render(); $('#d-' + i).scrollIntoView({block: 'start', behavior: 'smooth'}); } if (media.src) playDua(i); return; }
     if (ds.tg) { S[ds.tg] = !S[ds.tg]; save(); render(); return; }
     if (ds.off != null) { if (!S.off) S.off = {}; const v = +ds.off; S.off[DAYID] = v === 0 ? 0 : Math.round(((+S.off[DAYID] || 0) + v) * 100) / 100; save(); offInfo(); if (plan) playDua(S.dua); return; }
     if (ds.set) { const [k, v] = ds.set.split(':'); S[k] = isNaN(+v) ? v : +v; save(); if (plan && (k === 'mode' || k === 'speed' || k === 'tts')) playDua(S.dua); else render(); return; }
