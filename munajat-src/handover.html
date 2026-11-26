@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>মুনাজাত অ্যাপ নথি</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Amiri:wght@700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm handover document, everything needed to continue the app in a new session
+   IDEA: the app's own look — deep green band, gold accent, like the app header and player bar
+   PICTURE: a mock of the app's card + bottom player bar drawn in HTML, with the map of where each part lives
+   COLOUR and TYPE: deep green #0f3d33, gold #d9c98f, white paper; Hind Siliguri, Amiri for the one Arabic line
+   LAYOUT: hero band with picture, sticky section links, then sections with tables */
+:root{color-scheme:light dark;--bg:light-dark(#fbfaf6,#0d1714);--ink:light-dark(#1c2a26,#e8eeea);--mut:light-dark(#5d6b66,#9fb0a9);--line:light-dark(#e4e0d4,#26332f);--card:light-dark(#fff,#142320);--deep:#0f3d33;--gold:#d9c98f;--acc:light-dark(#0f5c4a,#7fd0b5)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 'Hind Siliguri',system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(28px,4vw,56px) max(5vw,16px)}
+.hero{background:var(--deep);color:#f3efe2;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:32px;align-items:center}
+h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;margin:0 0 12px;text-wrap:balance}
+.hero p{margin:0 0 10px;color:#d6dfda;max-width:60ch}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.links a{color:var(--deep);background:var(--gold);text-decoration:none;font-weight:700;padding:10px 14px;border-radius:12px;min-height:44px;display:inline-flex;align-items:center}
+.phone{background:#f6f4ee;border-radius:26px;padding:12px;box-shadow:0 18px 40px rgba(0,0,0,.35);max-width:360px;margin-inline:auto;width:100%;color:#1c2a26}
+.ph-top{background:var(--deep);color:#f6f4ee;border-radius:16px;padding:10px 12px;font-size:14px;font-weight:700}
+.ph-card{background:#fff;border:1px solid #e4e0d4;border-radius:14px;margin:10px 0;padding:10px 12px}
+.ph-row{display:flex;gap:8px;align-items:center;font-size:14px}.box{width:20px;height:20px;border:2px solid #5d6b66;border-radius:5px;flex:none}.box.on{background:#0f5c4a;border-color:#0f5c4a}
+.chip{border:1px solid #0f5c4a;color:#0f5c4a;border-radius:999px;padding:1px 8px;font-size:12px}
+.ar{font-family:Amiri,serif;font-size:24px;direction:rtl;text-align:right;color:#0f3d33;margin:6px 0 2px;flex:1}
+.ln{display:flex;gap:8px;align-items:flex-start;border-radius:10px;padding:6px 8px;margin-top:6px}.ln.sel{background:#fbf4dc;box-shadow:inset 3px 0 0 var(--gold)}
+.ph-bar{background:var(--deep);border-radius:16px;display:flex;justify-content:space-around;padding:10px 6px;color:#f6f4ee;font-size:18px}.ph-bar b{color:var(--gold)}
+.tag{font-size:12px;color:#5d6b66;text-align:center;margin-top:6px}
+nav.scroll{display:flex;gap:6px;padding:10px max(5vw,16px);border-bottom:1px solid var(--line);background:var(--bg)}
+nav.scroll a{flex:none;color:var(--acc);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:10px;border:1px solid var(--line);white-space:nowrap}
+@media(min-width:900px){nav.scroll{position:sticky;top:0;z-index:5}}
+main{max-width:1100px;margin:0 auto}
+h2{font-size:26px;line-height:1.2;margin:0 0 12px}h3{font-size:18px;margin:20px 0 6px}
+section{border-bottom:1px solid var(--line)}
+.lead{color:var(--mut);max-width:70ch;margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:15px;background:var(--card)}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:13px;color:var(--mut);font-weight:600}
+tr:nth-child(even) td{background:light-dark(#f7f5ee,#12201c)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;background:light-dark(#f0eee6,#1b2b27);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+pre{overflow-x:auto;background:light-dark(#f0eee6,#1b2b27);padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+ul,ol{padding-left:22px;margin:6px 0}li{margin:3px 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.copy{float:right;font:inherit;font-size:14px;padding:8px 12px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer;min-height:40px}
+.warn{border-left:4px solid var(--gold);padding:10px 14px;background:light-dark(#fbf4dc,#2a2614);border-radius:0 12px 12px 0;margin:10px 0}
+.scroll{overflow-x:auto}
+@media(max-width:760px){.hero{grid-template-columns:1fr}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head><body>
+
+<header class="band hero">
+  <div>
+    <h1>মুনাজাতে মাকবূল অ্যাপ — সম্পূর্ণ নথি</h1>
+    <p>সেশন হারিয়ে গেলেও যেন কাজ আবার ঠিক এখান থেকে ধরা যায়: অ্যাপ কোথায় আছে, কোন ফাইলে কী, কীভাবে update হয়, কী কী সুবিধা আছে আর কী বাকি।</p>
+    <p>অবস্থা: ওয়েব সংস্করণ <b>৬০</b> (২৬ নভেম্বর ২০২৬) · APK বিল্ড <b>৬</b> · ৭ দিনের দোয়া + সূরা আল-কাহফ।</p>
+    <div class="links">
+      <a href="https://sil-cbs.github.io/shopno-kuthir/munajat/">অ্যাপ খুলুন</a>
+      <a href="https://github.com/SIL-CBS/shopno-kuthir/releases/download/munajat-v2-latest/munajat-v2-debug.apk">APK নামান</a>
+      <a href="https://github.com/SIL-CBS/shopno-kuthir/tree/main/munajat">কোড (GitHub)</a>
+    </div>
+  </div>
+  <div class="phone" aria-label="অ্যাপের নকশার ছোট ছবি">
+    <div class="ph-top">মুনাজাতে মাকবূল · শনিবার · ১ম মনজিল</div>
+    <div class="ph-card">
+      <div class="ph-row"><span class="box"></span><b style="color:#0f5c4a">৩</b><span style="flex:1"></span><span class="chip">অর্থ</span><span class="chip">📖 বাকারা ২:২৮৬</span><span>☆</span></div>
+      <div class="ln"><span class="box"></span><div class="ar">رَبَّنَا لَا تُؤَاخِذْنَا</div></div>
+      <div class="ln sel"><span class="box on"></span><div class="ar">رَبَّنَا وَلَا تَحْمِلْ عَلَيْنَا</div></div>
+    </div>
+    <div class="ph-bar"><span>⏮</span><b>▶</b><span>⏭</span><span>■</span><span>↻<small style="font-size:11px;color:var(--gold)">৩</small></span><span>⚙</span></div>
+    <div class="tag">নিচে ছোট প্লেয়ার · লাইন বাছাই · দলে রিপিট</div>
+  </div>
+</header>
+
+<nav class="scroll" aria-label="অংশগুলো">
+  <a href="#where">কোথায় কী</a><a href="#update">update করার নিয়ম</a><a href="#features">সুবিধা</a><a href="#data">ডেটা</a><a href="#apk">APK</a><a href="#phone">ফোন সেটআপ</a><a href="#pending">বাকি কাজ</a><a href="#history">ইতিহাস</a><a href="#resume">নতুন সেশনে শুরু</a>
+</nav>
+
+<main>
+<section class="band" id="where">
+  <h2>কোথায় কী আছে</h2>
+  <p class="lead">সব কোড আর ডেটা একটা GitHub রিপোতে: <code>SIL-CBS/shopno-kuthir</code> (main শাখা)। রিপো public, GitHub Pages থেকে অ্যাপ চলে। কোনো অডিও ফাইল রিপোতে নেই; অডিও প্রত্যেকের ফোনে আলাদা থাকে।</p>
+  <div class="scroll"><table class="stack"><thead><tr><th>অংশ</th><th>পথ</th><th>কাজ</th></tr></thead><tbody>
+    <tr><td>ওয়েব অ্যাপ</td><td><code>munajat/index.html</code></td><td>পাতার গঠন, সব CSS, সেটিং শিট, নিচের প্লেয়ার বার</td></tr>
+    <tr><td>অ্যাপের মূল কোড</td><td><code>munajat/app.js</code></td><td>প্লেয়ার, পরিকল্পনা (plan), রিপিট, লাইন বাছাই, অর্থ পাতা, শেয়ার, কণ্ঠে পড়া, About, লগ</td></tr>
+    <tr><td>সব লেখা</td><td><code>munajat/data.js</code></td><td><code>window.MUNAJAT</code> — ৮টা দিন: আরবি, উচ্চারণ, অর্থ, প্রতিটা লাইনের সময়, উৎস</td></tr>
+    <tr><td>অফলাইন ক্যাশ</td><td><code>munajat/sw.js</code></td><td>service worker; ক্যাশ নাম <code>munajat-vNN</code></td></tr>
+    <tr><td>দিনভিত্তিক JSON</td><td><code>munajat/saturday.json</code> …</td><td>পুরোনো কপি, অ্যাপ এখন data.js পড়ে</td></tr>
+    <tr><td>সূরা কাহফ বানানোর স্ক্রিপ্ট</td><td><code>munajat-src/add_kahf.py</code></td><td>quran-json থেকে কাহফ data.js-এ বসায়; লাইন ভাঙার নিয়ম এখানে</td></tr>
+    <tr><td>কুরআন ডেটা</td><td><code>munajat-src/quran_18_bn.json</code></td><td>quran-json@3.1.2: উসমানি আরবি, মুহিউদ্দীন খানের বাংলা অর্থ, ইংরেজি উচ্চারণ</td></tr>
+    <tr><td>পুরোনো উৎস ফাইল</td><td><code>munajat-src/legacy/</code></td><td>কয়েক দিনের data_/meaning_ স্ক্রিপ্ট (রেকর্ড হিসেবে; আসল ডেটা data.js-এ)</td></tr>
+    <tr><td>এই নথি</td><td><code>munajat-src/handover.html</code></td><td>এই পাতাটাই, রিপোতে রাখা</td></tr>
+    <tr><td>Android অ্যাপ</td><td><code>munajat-v2/</code></td><td>Capacitor 7 প্রকল্প; অ্যাপ লাইভ সাইট লোড করে</td></tr>
+    <tr><td>APK বিল্ড</td><td><code>.github/workflows/munajat-v2-apk.yml</code></td><td>munajat-v2 বদলালে নিজে APK বানিয়ে রিলিজ <code>munajat-v2-latest</code>-এ দেয়</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="band" id="update">
+  <h2>update করার নিয়ম</h2>
+  <p class="lead">লেখা বা নকশা বদলালে শুধু ওয়েব ফাইল push করলেই ওয়েব আর APK দুটোতেই চলে যায়। APK নতুন করে লাগে শুধু অ্যাপের নিজস্ব (native) অংশ বদলালে।</p>
+  <div class="cols">
+    <div class="card"><h3>প্রতিবার সংস্করণ বাড়ানো</h3><ol>
+      <li><code>app.js</code>: <code>APPVER</code> আর <code>APPDATE</code> বাড়ান, <code>CHANGES</code>-এর শুরুতে নতুন সারি দিন</li>
+      <li><code>sw.js</code>: ক্যাশ নাম <code>munajat-vNN</code> আর <code>?v=NN</code></li>
+      <li><code>index.html</code>: <code>data.js?v=NN</code> আর <code>app.js?v=NN</code></li>
+      <li><code>node --check munajat/app.js</code>, তারপর commit ও push</li>
+      <li>GitHub Pages ১–২ মিনিটে ছাপে; অ্যাপ খুললে নিজে নতুনটা নেয় (service worker <code>updateViaCache:'none'</code> + reload)</li></ol></div>
+    <div class="card"><h3>APK নতুন করে লাগে যখন</h3><ul>
+      <li>নতুন native plugin যোগ হলে (<code>munajat-v2/package.json</code>)</li>
+      <li>আইকন, শুরুর পর্দা, অনুমতি (AndroidManifest), MainActivity বদলালে</li>
+      <li>তখন <code>capacitor.config.json</code>-এ <code>appendUserAgent: "MunajatApk/N"</code> আর <code>build.gradle</code>-এ <code>versionCode</code> বাড়ান, <code>app.js</code>-এ <code>APK_LATEST = N</code> দিন</li>
+      <li>অ্যাপের ভেতরে "নতুন APK" বোতাম নিজে দেখায়</li></ul></div>
+  </div>
+  <div class="warn">APK একটা স্থায়ী পরীক্ষামূলক চাবি দিয়ে সই করা (<code>munajat-v2/android/app/munajat-test.keystore</code>, বিল্ড ৩ থেকে)। চাবি বদলালে পুরোনো অ্যাপ Uninstall করে বসাতে হবে, তাই এটা বদলাবেন না। Play Store-এ দেওয়ার সময় আলাদা release চাবি লাগবে।</div>
+</section>
+
+<section class="band" id="features">
+  <h2>অ্যাপে যা যা আছে</h2>
+  <div class="cols">
+    <div class="card"><h3>পড়া ও শোনা</h3><ul>
+      <li>৭ দিনের দোয়া (শনি–জুমা, দোয়া ১–২০৪) আর আলাদা "সূরা" অংশে সূরা আল-কাহফ</li>
+      <li>প্রতিটা দোয়া/আয়াত কার্ড; ভেতরে লাইন: আরবি, উচ্চারণ, অর্থ</li>
+      <li>নম্বরে চাপলে খোলে/বন্ধ হয়; অন্যটায় চাপলে সেটা খোলে</li>
+      <li>মোড: পুরো দোয়া · লাইন ধরে · মুখস্থ (প্রতি লাইনের পর থেমে নিজে বলার সময়)</li>
+      <li>আজকের বার নিজে খোলে; যেখানে থেমেছিলেন সেখান থেকে চালানোর বোতাম</li>
+      <li>খোঁজা (অর্থ, উচ্চারণ, নম্বর — ৭ দিনেই), প্রিয় ★</li></ul></div>
+    <div class="card"><h3>নিচের প্লেয়ার বার</h3><ul>
+      <li>⏮ একবার: চলতি লাইন আবার শুরু · দ্রুত দুবার: আগের লাইন</li>
+      <li>▶ / ⏸ · ⏭ পরের দোয়া · ■ বন্ধ · ⚙ সেটিং</li>
+      <li>🔁 রিপিট: ১ → ২ → ৩ → ৫ → ৭ → ১০ → ১; চলতি লাইনে, বা বাছাই করা লাইনের দলে</li>
+      <li>লাইন বাছাই (☐) থাকলে ▶ প্রথম বাছাই করা লাইন থেকে শুরু হয়; দল ততবার বেজে পরের লাইনে যায়</li>
+      <li>অন্য লাইনে চাপলে সেখানে যায়, সাময়িক রিপিট ১ হয়ে যায়</li></ul></div>
+    <div class="card"><h3>অর্থ পাতা</h3><ul>
+      <li>কার্ডের "অর্থ" বোতাম: পুরো বাংলা অর্থ, উৎস</li>
+      <li>"একটা করে" (আগের/পরের) আর "সব অর্থ" তালিকা</li>
+      <li>🔊 শুধু বাংলা অর্থ পড়ে শোনায়; "এখান থেকে সব" ক্রমে পড়ে</li>
+      <li>শেয়ার: WhatsApp, Telegram, Messenger/অন্য অ্যাপ (ফোনের শেয়ার তালিকা), কপি</li></ul></div>
+    <div class="card"><h3>সেটিং</h3><ul>
+      <li>কতবার, বিরতি, শেষে পুরো দোয়া, দোয়া শেষে কী হবে, তালিকা ঘুরবে কিনা</li>
+      <li>বাংলা অর্থ শোনাও (পরীক্ষামূলক: শুধু শনিবার দোয়া ১–২), গতি</li>
+      <li>আরবি ফন্ট (আমিরি/উসমানি/নাস্খ) ও আকার, রঙ (ফোন/দিন/রাত/আরামদায়ক রাত)</li>
+      <li>উৎসের লিংক খুলবে (ডিফল্ট বন্ধ; নেট না থাকলেও বন্ধ)</li>
+      <li>অডিওর সময় মেলান ±৫০০ মি.সে. (প্রতি দিন), প্রতি দোয়ায় শুরু/শেষ ±</li>
+      <li>নোটিফিকেশনে প্লেয়ার (পরীক্ষামূলক, ডিফল্ট বন্ধ — চালু করলে কিছু ফোনে অ্যাপ বন্ধ হচ্ছিল)</li></ul></div>
+    <div class="card"><h3>অডিও</h3><ul>
+      <li>প্রতিটা দিনের অডিও "ফাইল দিন" দিয়ে ফোনে রাখা (IndexedDB); নেট ছাড়া চলে</li>
+      <li>ভিডিও দিলে সতর্কবার্তা দেয়; m4a অডিও ভালো (লক স্ক্রিনে চলে)</li>
+      <li>৭ দিনের প্রস্তুত m4a ফাইল আগে চ্যাটে দেওয়া হয়েছিল</li></ul></div>
+    <div class="card"><h3>ⓘ About</h3><ul>
+      <li>সংস্করণ, APK বিল্ড, "কী নতুন" তালিকা</li>
+      <li>দিনভিত্তিক উৎসের হিসাব: কতগুলো পাওয়া গেছে, কোন নম্বর বাকি</li>
+      <li>লগ (কপি/মুছুন) — সমস্যা হলে এটা পাঠাতে বলা হয়; <code>tts</code>, <code>nms</code>, <code>native-crash</code>, <code>rpt</code>, <code>prev</code> লাইন</li></ul></div>
+  </div>
+</section>
+
+<section class="band" id="data">
+  <h2>ডেটার গঠন</h2>
+  <p class="lead"><code>data.js</code> একটা JSON: <code>days[]</code>, প্রতিটায় <code>id, title, range, dur, duas[]</code>। দোয়ায় <code>no, s, e, lines[], ref</code>; লাইনে <code>ar, bn (উচ্চারণ), mn (অর্থ), s, e</code> (সেকেন্ডে)।</p>
+  <pre>{"id":"kahf","title":"সূরা আল-কাহফ","unit":"আয়াত","approx":true,"dur":2700,
+ "duas":[{"no":"১৩","s":..,"e":..,"ref":{"t":"q","txt":"সূরা আল-কাহফ ১৮:১৩","url":"https://quran.com/18/13","short":"কাহফ ১৮:১৩"},
+   "lines":[{"ar":"…","bn":"Nahnu naqussu …","mn":"","s":..,"e":..}, …শেষ লাইনে mn = পুরো আয়াতের অর্থ]}]}</pre>
+  <div class="scroll"><table class="stack"><thead><tr><th>দিন</th><th>দোয়া</th><th>সময় মেলানো</th><th>উৎস</th></tr></thead><tbody>
+    <tr><td>শনিবার · ১ম মনজিল</td><td>১–৫৪</td><td>নিখুঁত (শ্বাসের বিরতি ধরে)</td><td>সব আছে</td></tr>
+    <tr><td>রবিবার · ২য়</td><td>৫৫–৮৫</td><td>নিখুঁত</td><td>আছে</td></tr>
+    <tr><td>সোমবার · ৩য়</td><td>৮৬–১১৬</td><td>নিখুঁত</td><td>আছে</td></tr>
+    <tr><td>মঙ্গলবার · ৪র্থ</td><td>১১৭–১৫০</td><td>নিখুঁত</td><td>১২৯, ১৪৪–১৫০ বাকি</td></tr>
+    <tr><td>বুধবার · ৫ম</td><td>১৫১–১৭৪</td><td>নিখুঁত; ১৬২-এর শেষ আর ১৬৩ লেখা নেই</td><td>২৫টা বাকি</td></tr>
+    <tr><td>বৃহস্পতিবার · ৬ষ্ঠ</td><td>১৭৫–১৯০ (নম্বর অনুমিত)</td><td>নিখুঁত</td><td>১৬টা বাকি</td></tr>
+    <tr><td>জুমাবার · ৭ম</td><td>১৯১–২০৪</td><td>নিখুঁত</td><td>১৫টা বাকি</td></tr>
+    <tr><td>সূরা আল-কাহফ</td><td>আয়াত ১–১১০ (৩২০ লাইন)</td><td><b>আনুমানিক</b> — অডিওর দৈর্ঘ্য দিয়ে ভাগ</td><td>প্রতি আয়াতে quran.com</td></tr>
+  </tbody></table></div>
+  <h3>সময় মেলানোর পদ্ধতি (নতুন অডিও এলে)</h3>
+  <ol><li>অডিও থেকে প্রতি ১০ মি.সে.-এ আওয়াজের মাত্রা (dB) বের করা</li>
+  <li>লম্বা চুপ অংশ (−৩০ dB-এর নিচে, ≥০.১৫ সে.) খুঁজে দোয়া/লাইনের সীমানা ধরা; দোয়ার শুরু শ্বাসের বিরতিতে বসানো</li>
+  <li>পেছনে আওয়াজ থাকলে গভীরতম বিরতি বেছে নেওয়া; লাইনের সংখ্যা মিলিয়ে দেখা</li>
+  <li>ফল <code>data.js</code>-এর <code>s/e</code>-তে বসিয়ে কানে শুনে যাচাই</li></ol>
+</section>
+
+<section class="band" id="apk">
+  <h2>Android অ্যাপ (APK)</h2>
+  <div class="scroll"><table class="stack"><thead><tr><th>বিষয়</th><th>মান</th></tr></thead><tbody>
+    <tr><td>appId</td><td><code>bd.sohel.munajat</code></td></tr>
+    <tr><td>কাঠামো</td><td>Capacitor 7; <code>server.url</code> = লাইভ সাইট, তাই লেখা ও ফিচার নিজে update হয়</td></tr>
+    <tr><td>native plugin</td><td><code>@capacitor-community/text-to-speech</code> (বাংলা কণ্ঠ), <code>@capacitor/share</code> (শেয়ার তালিকা), <code>@jofr/capacitor-media-session</code> (নোটিফিকেশন প্লেয়ার, এখন ঐচ্ছিক)</td></tr>
+    <tr><td>বর্তমান বিল্ড</td><td>৬ (<code>MunajatApk/6</code>, versionCode 6)</td></tr>
+    <tr><td>বিল্ড</td><td>GitHub Actions: <code>npm ci --legacy-peer-deps</code> → <code>cap sync</code> → <code>assembleDebug</code> → রিলিজ</td></tr>
+    <tr><td>MainActivity</td><td>নোটিফিকেশনের অনুমতি চায়; অ্যাপ হঠাৎ বন্ধ হলে কারণ রেখে পরের বার লগে দেখায়</td></tr>
+    <tr><td>Play Store</td><td>এখন নয়; কাজ পুরো শেষ হলে (খরচ লাগে বলে পিছিয়ে রাখা)</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="band" id="phone">
+  <h2>ফোন সেটআপ (Samsung সহ)</h2>
+  <ul>
+    <li><b>বাংলা কণ্ঠ:</b> Settings → সার্চে "Text-to-speech" → Preferred engine = <b>Speech Services by Google</b> (Samsung ইঞ্জিনে বাংলা নেই) → ⚙ → Install voice data → বাংলা (বাংলাদেশ) → Language = বাংলা</li>
+    <li><b>APK বসানো আটকে গেলে:</b> Play Protect / নিরাপত্তা স্ক্যান সাময়িক বন্ধ রেখে Install, পরে আবার চালু</li>
+    <li><b>লক স্ক্রিনে অডিও:</b> m4a অডিও ফাইল দিন; ভিডিও ফাইলে Chrome পেছনে গেলে থামায়</li>
+  </ul>
+</section>
+
+<section class="band" id="pending">
+  <h2>যা বাকি</h2>
+  <ol>
+    <li><b>সূরা কাহফের সময় মেলানো</b> — Sohel অডিও ফাইল চ্যাটে পাঠালে প্রতিটা আয়াত/লাইন মেলাতে হবে, তারপর <code>approx</code> তুলে দিতে হবে</li>
+    <li><b>কাহফের বাংলা উচ্চারণ</b> — এখন ইংরেজি অক্ষরে; বাংলা উৎস (বই/পিডিএফ) পেলে বসানো</li>
+    <li><b>৬৪টা দোয়ার উৎস</b> — মঙ্গল ১২৯ ও ১৪৪–১৫০, বুধ ২৫, বৃহস্পতি ১৬, জুমা ১৫ (বইয়ের ছবি বা খুঁজে)</li>
+    <li><b>বুধবারের ফাঁক</b> — দোয়া ১৬২-এর শেষ আর পুরো ১৬৩ (বইয়ের পাতা লাগবে)</li>
+    <li><b>বাংলা অর্থ শোনানো সব দোয়ায়</b> — এখন শুধু শনিবার ১–২ পরীক্ষামূলক (অর্থ পাতার 🔊 সব দোয়ায় চলে)</li>
+    <li><b>নোটিফিকেশন প্লেয়ার</b> — কিছু ফোনে অ্যাপ বন্ধ হয়ে যাচ্ছিল; সেটিং থেকে চালু করে <code>native-crash</code> লগ পেলে ঠিক করা</li>
+    <li>প্রস্তাবিত, এখনো করা হয়নি: প্রতিদিনের রিমাইন্ডার, অগ্রগতি/মুখস্থের হিসাব, ঘুমের টাইমার, শব্দে শব্দে অর্থ, ব্যাকআপ</li>
+  </ol>
+</section>
+
+<section class="band" id="history">
+  <h2>সংস্করণের ইতিহাস (সংক্ষেপে)</h2>
+  <div class="scroll"><table class="stack"><thead><tr><th>সংস্করণ</th><th>তারিখ</th><th>কী এল</th></tr></thead><tbody>
+    <tr><td>১–৪৪</td><td>নভেম্বর ১৬–১৭</td><td>৭ দিনের লেখা ও সময়; সার্চ, প্রিয়, মুখস্থ মোড; প্রতি লাইনে কতবার; ±৫০০ মি.সে.; লক স্ক্রিন ঠিক করা; নিজে update; উৎস চিপ; About; APK (Capacitor)</td></tr>
+    <tr><td>৪৫–৪৮</td><td>১৭–১৮</td><td>native বাংলা কণ্ঠ; অর্থ পাতা ও শেয়ার; আজকের দিন; যেখানে থেমেছিলেন; ফন্ট ও রঙ; আইকন; নোটিফিকেশন প্লেয়ার (পরে ঐচ্ছিক)</td></tr>
+    <tr><td>৪৯–৫০</td><td>২০–২১</td><td>অর্থের তালিকা, আগের/পরের, WhatsApp/Telegram/Messenger; অর্থ পড়ে শোনানো</td></tr>
+    <tr><td>৫১–৫৫</td><td>২৩</td><td>নিচে ছোট প্লেয়ার বার; 🔁 রিপিট ১/২/৩/৫/৭/১০; লাইন বাছাই ও দলে রিপিট; বাছাই থাকলে সেখান থেকে শুরু</td></tr>
+    <tr><td>৫৬–৫৯</td><td>২৩</td><td>সূরা আল-কাহফ (আয়াতভিত্তিক, ছোট লাইন); ⏮ একবার/দুবার</td></tr>
+    <tr><td>৬০</td><td>২৬</td><td>নম্বরে চাপলে খোলা/বন্ধ</td></tr>
+  </tbody></table></div>
+</section>
+
+<section class="band" id="resume">
+  <h2>নতুন সেশনে কাজ শুরু করতে</h2>
+  <p class="lead">নতুন চ্যাটে নিচের লেখাটা দিলেই যথেষ্ট; এই নথি আর রিপো থেকে বাকিটা বোঝা যাবে।</p>
+  <button class="copy" id="cp" type="button">কপি</button>
+  <pre id="prompt">মুনাজাতে মাকবূল অ্যাপের কাজ চালিয়ে যাব। কোড: GitHub SIL-CBS/shopno-kuthir (main) — munajat/ (ওয়েব অ্যাপ: index.html, app.js, data.js, sw.js), munajat-v2/ (Capacitor APK), munajat-src/ (add_kahf.py, handover.html)। রিপো clone করে munajat-src/handover.html পড়ো। প্রতিটা বদলে APPVER/CHANGES, sw.js ক্যাশ আর index.html-এর ?v= বাড়িয়ে push করবে; APK শুধু native বদলে। উত্তর বাংলায়, ছোট করে।</pre>
+</section>
+</main>
+
+<script>
+{
+  const b = document.getElementById('cp'), t = document.getElementById('prompt');
+  b.addEventListener('click', () => {
+    const done = () => { b.textContent = 'কপি হয়েছে ✓'; setTimeout(() => { b.textContent = 'কপি'; }, 1800); };
+    if (navigator.clipboard) navigator.clipboard.writeText(t.textContent).then(done).catch(() => { const r = document.createRange(); r.selectNodeContents(t); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'বাছাই হয়েছে — কপি করুন'; });
+  });
+}
+</script>
+</body></html>
